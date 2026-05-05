@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# goal-tree
 
-## Getting Started
+Personal study helper and routine tracker. Single user, GitHub-OAuth gated, Vercel-deployed.
 
-First, run the development server:
+## Stack
+
+Next 16 (App Router) · React 19 · Tailwind 4 · shadcn/ui · Drizzle ORM · Neon Postgres · Auth.js v5 · Vitest · Playwright (local only).
+
+## Local development
+
+Prereqs: pnpm, Docker, Node 20+.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# 1. Install deps
+pnpm install
+
+# 2. Copy env template and fill in GitHub OAuth values
+cp .env.example .env.local
+# edit .env.local
+
+# 3. Start local Postgres (port 5433 to avoid host Postgres conflicts)
+docker compose up -d db
+
+# 4. Apply migrations
+pnpm db:migrate
+
+# 5. Run dev server
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tests
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command | What it runs |
+|---|---|
+| `pnpm test:unit` | Pure unit tests (no I/O). Fast. |
+| `pnpm test:integration` | Server actions + queries against real Postgres. |
+| `pnpm test:e2e` | Playwright. **Local only — not in CI.** |
+| `pnpm typecheck` | `tsc --noEmit`. |
+| `pnpm lint` | ESLint. |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Workflow
 
-## Learn More
+Every feature beyond foundation:
+1. openspec proposal under `openspec/changes/<change-id>/`
+2. GitHub issue via `gh-issue` skill
+3. Branch via `gh-dev` skill
+4. TDD inside the branch (BDD-style describe/it naming)
+5. PR via `gh-pr` skill — fills the PR template
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Production deploys from `main` via Vercel. Build runs `pnpm build:ci`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Docs
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Spec: `docs/superpowers/specs/2026-05-05-goal-tree-mvp-design.md`
+- Foundation plan: `docs/superpowers/plans/2026-05-05-goal-tree-foundation.md`
