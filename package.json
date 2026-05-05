@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "pnpm db:migrate && next build",
+    "build:ci": "tsx src/db/migrate.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",

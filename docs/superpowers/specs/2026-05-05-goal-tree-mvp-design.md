@@ -262,7 +262,7 @@ E2E intentionally excluded — Playwright runs locally only via `pnpm test:e2e`.
 Vercel deployment:
 - `dev` branch → preview deploys.
 - `main` branch → production.
-- Build command: `pnpm db:migrate && pnpm build`.
+- Build command: `pnpm build:ci`.
 - Required env vars: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `ALLOWED_GITHUB_ID`.
 
 ## 10. Workflow ground rules (SDD / TDD / BDD)

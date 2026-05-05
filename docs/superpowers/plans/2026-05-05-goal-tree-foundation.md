@@ -102,6 +102,7 @@ Replace the `scripts` object with:
 "scripts": {
   "dev": "next dev",
   "build": "pnpm db:migrate && next build",
+  "build:ci": "tsx src/db/migrate.ts && next build",
   "start": "next start",
   "lint": "eslint",
   "typecheck": "tsc --noEmit",
@@ -1601,7 +1602,7 @@ Every feature beyond foundation:
 
 ## Deploy
 
-Production deploys from `main` via Vercel. Build runs `pnpm db:migrate && pnpm build`.
+Production deploys from `main` via Vercel. Build runs `pnpm build:ci`.
 
 ## Docs
 
