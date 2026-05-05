@@ -169,7 +169,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: goal_tree
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d goal_tree"]
       interval: 5s
@@ -186,7 +186,7 @@ volumes:
 
 ```
 # Database
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/goal_tree
+DATABASE_URL=postgres://postgres:postgres@localhost:5433/goal_tree
 
 # Auth.js
 AUTH_SECRET=replace-me-with-32-byte-random-hex
@@ -199,7 +199,7 @@ NEXTAUTH_URL=http://localhost:3000
 - [ ] **Step 2.3: Create `.env.local`** (NOT committed — `.gitignore` from Task 1 covers it)
 
 ```
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/goal_tree
+DATABASE_URL=postgres://postgres:postgres@localhost:5433/goal_tree
 AUTH_SECRET=dev-only-not-secret-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 AUTH_GITHUB_ID=replace-me
 AUTH_GITHUB_SECRET=replace-me
@@ -1446,6 +1446,8 @@ git commit -m "test: configure playwright for local-only E2E"
 - [ ] **Step 16.1: Create `.github/workflows/ci.yml`**
 
 > Note: the local `test:integration` script wraps with `dotenv -e .env.local`, which doesn't exist in CI. The CI step below invokes vitest directly so it picks up env from the job-level `env:` block instead.
+
+> Port note: local development uses host port **5433** (`127.0.0.1:5433:5432` in `docker-compose.yml`) to avoid conflicts with any Postgres instance already bound to `localhost:5432` on the host machine. GitHub Actions service containers run in an isolated network where no host Postgres exists, so CI continues to use port **5432** — no conflict arises there.
 
 ```yaml
 name: CI
