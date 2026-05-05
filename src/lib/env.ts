@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
 const EnvSchema = z.object({
-  DATABASE_URL: z.string().url().or(z.string().startsWith('postgres://')),
+  DATABASE_URL: z.url().or(z.string().startsWith('postgres://')),
   AUTH_SECRET: z.string().min(32),
   AUTH_GITHUB_ID: z.string().min(1),
   AUTH_GITHUB_SECRET: z.string().min(1),
   ALLOWED_GITHUB_ID: z.string().min(1),
-  NEXTAUTH_URL: z.string().url(),
+  NEXTAUTH_URL: z.url(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
