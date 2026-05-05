@@ -14,10 +14,10 @@ export const goals = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
   },
-  (t) => ({
-    statusCheck: check('goals_status_chk', sql`${t.status} IN ('active','completed','archived')`),
-    userStatusIdx: index('goals_user_status_idx').on(t.userId, t.status),
-  }),
+  (t) => [
+    check('goals_status_chk', sql`${t.status} IN ('active','completed','archived')`),
+    index('goals_user_status_idx').on(t.userId, t.status),
+  ],
 );
 
 export type Goal = typeof goals.$inferSelect;

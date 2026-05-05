@@ -614,10 +614,10 @@ export const goals = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
   },
-  (t) => ({
-    statusCheck: check('goals_status_chk', sql`${t.status} IN ('active','completed','archived')`),
-    userStatusIdx: index('goals_user_status_idx').on(t.userId, t.status),
-  }),
+  (t) => [
+    check('goals_status_chk', sql`${t.status} IN ('active','completed','archived')`),
+    index('goals_user_status_idx').on(t.userId, t.status),
+  ],
 );
 
 export type Goal = typeof goals.$inferSelect;
@@ -644,17 +644,17 @@ export const routines = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
   },
-  (t) => ({
-    cadenceCheck: check(
+  (t) => [
+    check(
       'routines_cadence_chk',
       sql`${t.cadenceType} IN ('daily','weekdays')`,
     ),
-    weekdaysCheck: check(
+    check(
       'routines_weekdays_chk',
       sql`(${t.cadenceType} = 'daily') OR (${t.weekdays} IS NOT NULL AND array_length(${t.weekdays}, 1) BETWEEN 1 AND 7)`,
     ),
-    userArchivedIdx: index('routines_user_archived_idx').on(t.userId, t.archivedAt),
-  }),
+    index('routines_user_archived_idx').on(t.userId, t.archivedAt),
+  ],
 );
 
 export type Routine = typeof routines.$inferSelect;
@@ -678,14 +678,14 @@ export const routineLogs = pgTable(
     note: text('note'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({
-    statusCheck: check(
+  (t) => [
+    check(
       'routine_logs_status_chk',
       sql`${t.status} IN ('done','partial','skipped')`,
     ),
-    uniqRoutineDay: uniqueIndex('routine_logs_routine_date_uniq').on(t.routineId, t.logDate),
-    routineDateIdx: index('routine_logs_routine_date_idx').on(t.routineId, t.logDate.desc()),
-  }),
+    uniqueIndex('routine_logs_routine_date_uniq').on(t.routineId, t.logDate),
+    index('routine_logs_routine_date_idx').on(t.routineId, t.logDate.desc()),
+  ],
 );
 
 export type RoutineLog = typeof routineLogs.$inferSelect;
@@ -713,10 +713,10 @@ export const notes = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({
-    depthCheck: check('notes_depth_chk', sql`${t.depth} BETWEEN 0 AND 2`),
-    userParentIdx: index('notes_user_parent_idx').on(t.userId, t.parentId),
-  }),
+  (t) => [
+    check('notes_depth_chk', sql`${t.depth} BETWEEN 0 AND 2`),
+    index('notes_user_parent_idx').on(t.userId, t.parentId),
+  ],
 );
 
 export type Note = typeof notes.$inferSelect;

@@ -12,14 +12,14 @@ export const routineLogs = pgTable(
     note: text('note'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({
-    statusCheck: check(
+  (t) => [
+    check(
       'routine_logs_status_chk',
       sql`${t.status} IN ('done','partial','skipped')`,
     ),
-    uniqRoutineDay: uniqueIndex('routine_logs_routine_date_uniq').on(t.routineId, t.logDate),
-    routineDateIdx: index('routine_logs_routine_date_idx').on(t.routineId, t.logDate.desc()),
-  }),
+    uniqueIndex('routine_logs_routine_date_uniq').on(t.routineId, t.logDate),
+    index('routine_logs_routine_date_idx').on(t.routineId, t.logDate.desc()),
+  ],
 );
 
 export type RoutineLog = typeof routineLogs.$inferSelect;

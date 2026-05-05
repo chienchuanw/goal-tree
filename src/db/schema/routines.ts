@@ -15,17 +15,17 @@ export const routines = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
   },
-  (t) => ({
-    cadenceCheck: check(
+  (t) => [
+    check(
       'routines_cadence_chk',
       sql`${t.cadenceType} IN ('daily','weekdays')`,
     ),
-    weekdaysCheck: check(
+    check(
       'routines_weekdays_chk',
       sql`(${t.cadenceType} = 'daily') OR (${t.weekdays} IS NOT NULL AND array_length(${t.weekdays}, 1) BETWEEN 1 AND 7)`,
     ),
-    userArchivedIdx: index('routines_user_archived_idx').on(t.userId, t.archivedAt),
-  }),
+    index('routines_user_archived_idx').on(t.userId, t.archivedAt),
+  ],
 );
 
 export type Routine = typeof routines.$inferSelect;

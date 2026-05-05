@@ -16,10 +16,10 @@ export const notes = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({
-    depthCheck: check('notes_depth_chk', sql`${t.depth} BETWEEN 0 AND 2`),
-    userParentIdx: index('notes_user_parent_idx').on(t.userId, t.parentId),
-  }),
+  (t) => [
+    check('notes_depth_chk', sql`${t.depth} BETWEEN 0 AND 2`),
+    index('notes_user_parent_idx').on(t.userId, t.parentId),
+  ],
 );
 
 export type Note = typeof notes.$inferSelect;
