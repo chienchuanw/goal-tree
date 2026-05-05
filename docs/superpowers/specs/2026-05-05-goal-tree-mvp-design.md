@@ -146,7 +146,7 @@ Indexes: `goals(user_id, status)`, `routines(user_id, archived_at)`, `routine_lo
 - Provider: Auth.js v5 GitHub OAuth.
 - `signIn` callback rejects any GitHub ID not equal to `process.env.ALLOWED_GITHUB_ID`. Rejection redirects to a "not authorized" page.
 - On first successful sign-in, upsert the `users` row keyed on `github_id`.
-- `middleware.ts` protects `app/(app)/**` and any `/api/**` route except `/api/auth/**`. Unauthenticated requests redirect to `/signin`.
+- `proxy.ts` protects `app/(app)/**` and any `/api/**` route except `/api/auth/**`. Unauthenticated requests redirect to `/signin`.
 - Session strategy: JWT (no session table needed for one user).
 
 ## 7. Folder layout
@@ -210,7 +210,7 @@ tests/
 drizzle.config.ts
 vitest.config.ts
 playwright.config.ts
-middleware.ts
+proxy.ts
 docker-compose.yml                 ← local Postgres for dev + integration tests
 .github/workflows/ci.yml
 ```

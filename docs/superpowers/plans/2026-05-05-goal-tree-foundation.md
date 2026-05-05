@@ -26,7 +26,7 @@ docker-compose.yml                          ← local Postgres service
 drizzle.config.ts                           ← migrations config
 vitest.config.ts                            ← unit + integration projects
 playwright.config.ts                        ← E2E config
-middleware.ts                               ← auth gate for (app)/**
+proxy.ts                                    ← auth gate for (app)/** (Next 16 renamed middleware → proxy)
 tsconfig.json                               ← path alias additions
 next.config.ts                              ← unchanged unless needed
 
@@ -1176,14 +1176,14 @@ git commit -m "feat(auth): add Auth.js v5 GitHub provider with single-ID allowli
 
 ---
 
-## Task 12: Middleware to gate `(app)/**`
+## Task 12: Proxy (auth gate) for `(app)/**`
 
-> Read `node_modules/next/dist/docs/01-app/02-guides/middleware.mdx` (or nearest) before editing.
+> **Next 16 note:** the file is named `proxy.ts`, not `middleware.ts`. Next 16 renamed the convention; the API is identical. Read `node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md` and `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md` before editing.
 
 **Files:**
-- Create: `middleware.ts`
+- Create: `proxy.ts`
 
-- [ ] **Step 12.1: Create `middleware.ts`** at the repo root
+- [ ] **Step 12.1: Create `proxy.ts`** at the repo root
 
 ```ts
 import { auth } from '@/lib/auth';
@@ -1223,8 +1223,8 @@ Stop the dev server.
 - [ ] **Step 12.3: Commit**
 
 ```bash
-git add middleware.ts
-git commit -m "feat(auth): add middleware gating (app)/** routes"
+git add proxy.ts
+git commit -m "feat(auth): add proxy gating (app)/** routes"
 ```
 
 ---
