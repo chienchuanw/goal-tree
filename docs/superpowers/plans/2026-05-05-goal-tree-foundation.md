@@ -366,7 +366,7 @@ git commit -m "chore(ts): extend @/* path alias to src/"
 - Create: `tests/setup/unit.ts`
 - Create: `tests/setup/integration.ts`
 
-- [ ] **Step 5.1: Create `vitest.config.ts`**
+- [ ] **Step 5.1: Create `vitest.config.mts`** (use `.mts` so Vite loads it via the ESM path — `.ts` triggers a CJS load that breaks against ESM-only deps in the toolchain)
 
 ```ts
 import { defineConfig } from 'vitest/config';
@@ -396,8 +396,7 @@ export default defineConfig({
           include: ['tests/integration/**/*.test.ts'],
           environment: 'node',
           setupFiles: ['./tests/setup/integration.ts'],
-          pool: 'forks',
-          poolOptions: { forks: { singleFork: true } },
+          fileParallelism: false,
           testTimeout: 15000,
         },
       },
@@ -405,6 +404,8 @@ export default defineConfig({
   },
 });
 ```
+
+> **Vitest 4 note:** `poolOptions` was removed in v4. Use `fileParallelism: false` on the integration project to serialize file execution (replaces the old `singleFork` knob) so transactional rollback tests don't trample each other.
 
 - [ ] **Step 5.2: Create `tests/setup/unit.ts`**
 
