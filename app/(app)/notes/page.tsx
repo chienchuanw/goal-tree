@@ -1,21 +1,10 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
-import { listNoteTree, type Note } from '@/services/notes';
-import { assembleTree, type FlatNote } from '@/domain/notes-tree';
+import { listNoteTree } from '@/services/notes';
+import { assembleTree, flatNoteOf } from '@/domain/notes-tree';
 import { NoteTreeSidebar } from '@/components/notes/NoteTreeSidebar';
 
 export const dynamic = 'force-dynamic';
-
-function flatNoteOf(n: Note): FlatNote {
-  return {
-    id: n.id,
-    parentId: n.parentId,
-    title: n.title,
-    depth: n.depth,
-    goalId: n.goalId,
-    updatedAt: n.updatedAt,
-  };
-}
 
 export default async function NotesPage() {
   const session = await auth();

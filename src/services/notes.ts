@@ -10,7 +10,14 @@ import {
   SetNoteGoalSchema,
   MoveNoteSchema,
 } from '@/lib/zod/notes';
-import { assembleTree, type FlatNote, type NoteNode } from '@/domain/notes-tree';
+import {
+  assembleTree,
+  collectIds,
+  findInTree,
+  flatNoteOf,
+  maxDepth,
+  type NoteNode,
+} from '@/domain/notes-tree';
 
 export async function getNote(
   id: string,
@@ -36,13 +43,16 @@ export async function listNoteTree(
     .orderBy(asc(notes.title));
 }
 
-export async function getNoteWithBreadcrumb(
+/**
+ * Resolve a note + its ancestor chain from a pre-fetched flat list.
+ * Returns null when the id isn't in `rows` (cross-user calls fail this way
+ * because `rows` came from `listNoteTree(userId)`).
+ */
+export function resolveBreadcrumb(
+  rows: Note[],
   id: string,
-  userId: string,
-  db: DbOrTx = defaultDb,
-): Promise<{ note: Note; breadcrumb: Note[] } | null> {
-  const all = await listNoteTree(userId, db);
-  const byId = new Map(all.map((n) => [n.id, n]));
+): { note: Note; breadcrumb: Note[] } | null {
+  const byId = new Map(rows.map((n) => [n.id, n]));
   const target = byId.get(id);
   if (!target) return null;
 
@@ -53,6 +63,28 @@ export async function getNoteWithBreadcrumb(
     cursor = cursor.parentId ? byId.get(cursor.parentId) : undefined;
   }
   return { note: target, breadcrumb };
+}
+
+export async function getNoteWithBreadcrumb(
+  id: string,
+  userId: string,
+  db: DbOrTx = defaultDb,
+): Promise<{ note: Note; breadcrumb: Note[] } | null> {
+  const all = await listNoteTree(userId, db);
+  return resolveBreadcrumb(all, id);
+}
+
+async function validateOwnedGoal(
+  tx: DbOrTx,
+  goalId: string,
+  userId: string,
+): Promise<void> {
+  const [g] = await tx
+    .select({ id: goals.id })
+    .from(goals)
+    .where(and(eq(goals.id, goalId), eq(goals.userId, userId)))
+    .limit(1);
+  if (!g) throw new Error('goal not found');
 }
 
 export async function createNote(
@@ -71,14 +103,7 @@ export async function createNote(
       depth = parent.depth + 1;
     }
 
-    if (parsed.goalId) {
-      const [g] = await tx
-        .select({ id: goals.id })
-        .from(goals)
-        .where(and(eq(goals.id, parsed.goalId), eq(goals.userId, userId)))
-        .limit(1);
-      if (!g) throw new Error('goal not found');
-    }
+    if (parsed.goalId) await validateOwnedGoal(tx, parsed.goalId, userId);
 
     const [row] = await tx
       .insert(notes)
@@ -139,42 +164,12 @@ export async function setNoteGoal(
   const parsed = SetNoteGoalSchema.parse(input);
 
   await db.transaction(async (tx) => {
-    if (parsed.goalId) {
-      const [g] = await tx
-        .select({ id: goals.id })
-        .from(goals)
-        .where(and(eq(goals.id, parsed.goalId), eq(goals.userId, userId)))
-        .limit(1);
-      if (!g) throw new Error('goal not found');
-    }
+    if (parsed.goalId) await validateOwnedGoal(tx, parsed.goalId, userId);
     await tx
       .update(notes)
       .set({ goalId: parsed.goalId, updatedAt: sql`clock_timestamp()` })
       .where(and(eq(notes.id, parsed.id), eq(notes.userId, userId)));
   });
-}
-
-function flatNoteOf(n: Note): FlatNote {
-  return {
-    id: n.id,
-    parentId: n.parentId,
-    title: n.title,
-    depth: n.depth,
-    goalId: n.goalId,
-    updatedAt: n.updatedAt,
-  };
-}
-
-function collectIds(node: NoteNode, into: string[] = []): string[] {
-  into.push(node.id);
-  for (const c of node.children) collectIds(c, into);
-  return into;
-}
-
-function maxDepth(node: NoteNode): number {
-  let m = node.depth;
-  for (const c of node.children) m = Math.max(m, maxDepth(c));
-  return m;
 }
 
 export async function moveNote(
@@ -198,19 +193,10 @@ export async function moveNote(
     const delta = newDepth - oldDepth;
 
     if (delta !== 0) {
-      // Build the user's tree, find the moved node, check its descendants' max depth.
       const all = await listNoteTree(userId, tx);
       const tree = assembleTree(all.map(flatNoteOf));
-      const findInTree = (list: NoteNode[]): NoteNode | null => {
-        for (const n of list) {
-          if (n.id === parsed.id) return n;
-          const inChild = findInTree(n.children);
-          if (inChild) return inChild;
-        }
-        return null;
-      };
-      const movedNode = findInTree(tree);
-      if (!movedNode) return; // Belt-and-suspenders.
+      const movedNode: NoteNode | null = findInTree(tree, parsed.id);
+      if (!movedNode) return;
       if (maxDepth(movedNode) + delta > 2) {
         throw new Error('move would push descendants beyond 3 levels');
       }
