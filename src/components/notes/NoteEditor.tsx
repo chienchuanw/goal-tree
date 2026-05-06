@@ -45,26 +45,29 @@ export function NoteEditor({ noteId, initialTitle, initialBody, saveAction }: Pr
     }
   }
 
+  // Keep a fresh `save` reference for the long-lived keydown listener.
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+
+  function markUnsaved(nextTitle: string, nextBody: string) {
+    const dirty =
+      lastSavedRef.current.title !== nextTitle ||
+      lastSavedRef.current.body !== nextBody;
+    if (dirty) setStatus((s) => (s === 'saved' ? 'unsaved' : s));
+  }
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        void save();
+        void saveRef.current();
       }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, body, noteId]);
-
-  // Reflect dirty state when title/body diverge from last saved.
-  useEffect(() => {
-    const dirty =
-      lastSavedRef.current.title !== title ||
-      lastSavedRef.current.body !== body;
-    if (dirty && status === 'saved') setStatus('unsaved');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, body]);
+  }, []);
 
   return (
     <div className="space-y-2">
@@ -72,7 +75,11 @@ export function NoteEditor({ noteId, initialTitle, initialBody, saveAction }: Pr
         <input
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value;
+            setTitle(next);
+            markUnsaved(next, body);
+          }}
           onBlur={() => void save()}
           maxLength={200}
           className="min-w-0 flex-1 rounded border border-zinc-300 px-3 py-2 text-base font-medium"
@@ -96,7 +103,10 @@ export function NoteEditor({ noteId, initialTitle, initialBody, saveAction }: Pr
           value={body}
           height="60vh"
           extensions={[markdown()]}
-          onChange={(value: string) => setBody(value)}
+          onChange={(value: string) => {
+            setBody(value);
+            markUnsaved(title, value);
+          }}
         />
       </div>
     </div>

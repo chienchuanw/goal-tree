@@ -1,12 +1,14 @@
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
-import {
-  getNoteWithBreadcrumb,
-  listNoteTree,
-  type Note,
-} from '@/services/notes';
+import { listNoteTree, resolveBreadcrumb } from '@/services/notes';
 import { listActiveGoals } from '@/services/goals';
-import { assembleTree, type FlatNote, type NoteNode } from '@/domain/notes-tree';
+import {
+  assembleTree,
+  findInTree,
+  flatNoteOf,
+  maxDepth,
+  type NoteNode,
+} from '@/domain/notes-tree';
 import { NoteTreeSidebar } from '@/components/notes/NoteTreeSidebar';
 import { EditorPane } from '@/components/notes/EditorPane';
 import { RenameNoteDialog } from '@/components/notes/RenameNoteDialog';
@@ -16,38 +18,30 @@ import { SetNoteGoalControl } from '@/components/notes/SetNoteGoalControl';
 
 export const dynamic = 'force-dynamic';
 
-function flatNoteOf(n: Note): FlatNote {
-  return {
-    id: n.id,
-    parentId: n.parentId,
-    title: n.title,
-    depth: n.depth,
-    goalId: n.goalId,
-    updatedAt: n.updatedAt,
-  };
-}
+type ParentOption = { id: string; title: string; depth: number; disabled: boolean };
 
-function maxDepth(node: NoteNode): number {
-  let m = node.depth;
-  for (const c of node.children) m = Math.max(m, maxDepth(c));
-  return m;
-}
-
+/**
+ * Walk the tree, listing every node as a candidate parent.
+ * `subtreeHeight` is `maxDepth(movedSubtree) - movedNode.depth` — i.e., how many
+ * levels of descendants the moved node carries. A candidate is disabled when
+ * placing the subtree under it would push the deepest descendant past depth 2.
+ */
 function buildParentOptions(
   tree: NoteNode[],
   movingId: string,
-  movingMaxDepth: number,
-  out: Array<{ id: string; title: string; depth: number; disabled: boolean }> = [],
-): Array<{ id: string; title: string; depth: number; disabled: boolean }> {
+  subtreeHeight: number,
+  out: ParentOption[] = [],
+): ParentOption[] {
   for (const n of tree) {
-    const isSelfOrDescendant = n.id === movingId;
+    const isMovingNode = n.id === movingId;
     out.push({
       id: n.id,
       title: n.title,
       depth: n.depth,
-      disabled: isSelfOrDescendant || (n.depth + 1 + (movingMaxDepth - 0)) > 2,
+      disabled: isMovingNode || n.depth + 1 + subtreeHeight > 2,
     });
-    if (!isSelfOrDescendant) buildParentOptions(n.children, movingId, movingMaxDepth, out);
+    // Recursing into the moved node would list its descendants — also invalid parents.
+    if (!isMovingNode) buildParentOptions(n.children, movingId, subtreeHeight, out);
   }
   return out;
 }
@@ -59,28 +53,21 @@ export default async function NotePage({ params }: Params) {
   const session = await auth();
   if (!session?.user?.id) redirect('/signin');
 
-  const [rows, goals, withCrumb] = await Promise.all([
+  const [rows, goals] = await Promise.all([
     listNoteTree(session.user.id),
     listActiveGoals(session.user.id),
-    getNoteWithBreadcrumb(id, session.user.id),
   ]);
+  const withCrumb = resolveBreadcrumb(rows, id);
   if (!withCrumb) notFound();
 
   const tree = assembleTree(rows.map(flatNoteOf));
   const goalOptions = goals.map((g) => ({ id: g.id, title: g.title }));
 
-  // Compute parent options for move: precompute moving node's max depth.
-  const findInTree = (list: NoteNode[]): NoteNode | null => {
-    for (const n of list) {
-      if (n.id === id) return n;
-      const f = findInTree(n.children);
-      if (f) return f;
-    }
-    return null;
-  };
-  const movingNode = findInTree(tree);
-  const movingMaxDepth = movingNode ? maxDepth(movingNode) : 0;
-  const parentOptions = buildParentOptions(tree, id, movingMaxDepth - withCrumb.note.depth);
+  const movingNode = findInTree(tree, id);
+  const subtreeHeight = movingNode
+    ? maxDepth(movingNode) - withCrumb.note.depth
+    : 0;
+  const parentOptions = buildParentOptions(tree, id, subtreeHeight);
 
   return (
     <div className="grid h-full gap-0 md:grid-cols-[280px_1fr]">

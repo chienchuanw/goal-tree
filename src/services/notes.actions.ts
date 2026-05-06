@@ -2,12 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireUserId } from '@/lib/require-user-id';
+import type { FormActionState } from './action-state';
 import * as svc from './notes';
 
-export type CreateNoteActionState =
-  | { status: 'idle' }
-  | { status: 'error'; message: string }
-  | { status: 'success'; id: string };
+export type CreateNoteActionState = FormActionState;
+export type RenameNoteActionState = FormActionState;
+export type MoveNoteActionState = FormActionState;
+
+export type SaveNoteResult = { status: 'ok' } | { status: 'error'; message: string };
 
 export async function createNoteAction(
   _prev: CreateNoteActionState,
@@ -36,8 +38,6 @@ export async function createNoteAction(
   }
 }
 
-export type SaveNoteResult = { status: 'ok' } | { status: 'error'; message: string };
-
 export async function saveNoteAction(
   id: string,
   title: string,
@@ -56,11 +56,6 @@ export async function saveNoteAction(
     };
   }
 }
-
-export type RenameNoteActionState =
-  | { status: 'idle' }
-  | { status: 'error'; message: string }
-  | { status: 'success'; id: string };
 
 export async function renameNoteAction(
   _prev: RenameNoteActionState,
@@ -104,11 +99,6 @@ export async function setNoteGoalAction(
     };
   }
 }
-
-export type MoveNoteActionState =
-  | { status: 'idle' }
-  | { status: 'error'; message: string }
-  | { status: 'success'; id: string };
 
 export async function moveNoteAction(
   _prev: MoveNoteActionState,
