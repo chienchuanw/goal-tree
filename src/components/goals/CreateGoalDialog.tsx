@@ -21,7 +21,7 @@ export function CreateGoalDialog() {
         <DialogHeader>
           <DialogTitle>Create a new goal</DialogTitle>
         </DialogHeader>
-        <CreateGoalForm onSuccess={() => setOpen(false)} />
+        <CreateGoalForm onSuccessAction={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
