@@ -375,7 +375,7 @@ export const CreateGoalSchema = z
     title: z.string().min(1).max(200),
     description: z.string().max(2000).optional(),
     deadlineAt: z
-      .string()
+      .iso
       .datetime({ offset: true })
       .transform((s) => new Date(s)),
   })
