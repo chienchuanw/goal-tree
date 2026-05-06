@@ -25,16 +25,16 @@ function defaultDeadlineLocalString(): string {
   return `${fmt.format(tomorrowUtc)}T23:59`;
 }
 
-type Props = { onSuccess?: () => void };
+type Props = { onSuccessAction?: () => void };
 
-export function CreateGoalForm({ onSuccess }: Props) {
+export function CreateGoalForm({ onSuccessAction }: Props) {
   const [state, formAction, pending] = useActionState(
     createGoalAction,
     initialState,
   );
 
-  if (state.status === 'success' && onSuccess) {
-    queueMicrotask(onSuccess);
+  if (state.status === 'success' && onSuccessAction) {
+    queueMicrotask(onSuccessAction);
   }
 
   return (
