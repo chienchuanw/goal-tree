@@ -1,21 +1,22 @@
 import { archiveGoalAction } from '@/services/goals.actions';
+import { ConfirmActionButton } from '@/components/ui/ConfirmActionButton';
 
 type Props = { id: string };
 
 export function ArchiveGoalButton({ id }: Props) {
+  const action = async () => {
+    'use server';
+    await archiveGoalAction(id);
+  };
   return (
-    <form
-      action={async () => {
-        'use server';
-        await archiveGoalAction(id);
-      }}
-    >
-      <button
-        type="submit"
-        className="num text-[10px] uppercase tracking-[0.18em] text-ink-faint transition-colors hover:text-signal"
-      >
-        Archive →
-      </button>
-    </form>
+    <ConfirmActionButton
+      action={action}
+      triggerLabel="Archive →"
+      triggerAriaLabel="Archive goal"
+      title="Archive this goal?"
+      description="You can restore it anytime from /archive."
+      confirmLabel="Archive"
+      variant="destructive"
+    />
   );
 }
