@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import { archiveGoalAction } from '@/services/goals.actions';
 
 type Props = { id: string };
@@ -11,9 +10,12 @@ export function ArchiveGoalButton({ id }: Props) {
         await archiveGoalAction(id);
       }}
     >
-      <Button type="submit" variant="ghost" size="sm">
-        Archive
-      </Button>
+      <button
+        type="submit"
+        className="num text-[10px] uppercase tracking-[0.18em] text-ink-faint transition-colors hover:text-signal"
+      >
+        Archive →
+      </button>
     </form>
   );
 }

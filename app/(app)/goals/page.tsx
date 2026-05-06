@@ -12,21 +12,43 @@ export default async function GoalsPage() {
 
   const goals = await listActiveGoals(session.user.id);
   const now = new Date();
+  const count = goals.length;
 
   return (
-    <section className="space-y-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Goals</h1>
-        <CreateGoalDialog />
+    <section className="space-y-10 md:space-y-14">
+      <header className="space-y-6">
+        <div className="flex items-baseline justify-between gap-4">
+          <p className="eyebrow">02 · Goals</p>
+          <p className="num text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+            {String(count).padStart(2, '0')} active
+          </p>
+        </div>
+        <div className="flex items-end justify-between gap-6 flex-wrap">
+          <h1 className="display text-5xl md:text-7xl">
+            Things with<br className="hidden md:block" /> a deadline.
+          </h1>
+          <CreateGoalDialog />
+        </div>
+        <div className="rule" />
       </header>
 
-      {goals.length === 0 ? (
-        <p className="text-zinc-600">No active goals yet. Create your first one.</p>
+      {count === 0 ? (
+        <div className="border border-rule p-8 md:p-12">
+          <p className="eyebrow mb-3">Empty</p>
+          <p className="text-ink-soft text-base md:text-lg max-w-md leading-relaxed">
+            No active goals yet. A goal is a single sentence, a deadline, and the
+            patience to outlast it.
+          </p>
+        </div>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {goals.map((g) => (
-            <li key={g.id}>
-              <GoalCard goal={g} now={now} />
+        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-t border-l border-rule">
+          {goals.map((g, i) => (
+            <li
+              key={g.id}
+              className="border-b border-r border-rule"
+              data-index={String(i + 1).padStart(2, '0')}
+            >
+              <GoalCard goal={g} now={now} index={i + 1} />
             </li>
           ))}
         </ul>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { daysUntil, hoursMinutesUntil } from '@/domain/countdown';
 import { CountdownBadge } from './CountdownBadge';
 
@@ -24,9 +23,27 @@ export function HoursCountdown({ deadlineAt }: Props) {
   if (days < 0) return <CountdownBadge daysRemaining={days} />;
 
   const { hours, minutes } = hoursMinutesUntil(deadline, now);
+  const urgent = hours < 6;
+
   return (
-    <Badge variant="secondary" aria-label={`${hours} hours ${minutes} minutes remaining`}>
-      {hours}h {minutes}m
-    </Badge>
+    <span
+      aria-label={`${hours} hours ${minutes} minutes remaining`}
+      className="inline-flex flex-col items-end leading-none"
+    >
+      <span
+        className={[
+          'num text-3xl md:text-4xl font-medium tracking-tight',
+          urgent ? 'text-signal' : 'text-ink',
+        ].join(' ')}
+      >
+        {hours}
+        <span className="text-base text-ink-muted">h</span>
+        <span className="ml-1.5">{String(minutes).padStart(2, '0')}</span>
+        <span className="text-base text-ink-muted">m</span>
+      </span>
+      <span className="num mt-1.5 text-[10px] uppercase tracking-[0.18em] text-ink-faint">
+        {urgent ? 'Critical' : 'Final day'}
+      </span>
+    </span>
   );
 }

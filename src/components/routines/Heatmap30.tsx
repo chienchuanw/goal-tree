@@ -1,11 +1,11 @@
 import type { HeatmapCellStatus } from '@/domain/streak';
 
 const COLOR: Record<HeatmapCellStatus, string> = {
-  done: 'bg-emerald-500',
-  partial: 'bg-amber-400',
-  skipped: 'bg-zinc-300',
-  none: 'bg-zinc-100',
-  na: 'bg-transparent',
+  done: 'bg-ink',
+  partial: 'bg-ink-muted',
+  skipped: 'bg-ink-faint/60',
+  none: 'bg-paper-tint',
+  na: 'bg-transparent border border-rule',
 };
 
 type Props = {
@@ -15,14 +15,14 @@ type Props = {
 export function Heatmap30({ cells }: Props) {
   return (
     <div
-      className="flex gap-[2px]"
+      className="flex gap-px"
       role="img"
       aria-label="30-day status heatmap, oldest on the left"
     >
       {cells.map((c) => (
         <span
           key={c.date}
-          className={`h-3 w-3 rounded-sm ${COLOR[c.status]}`}
+          className={`h-3 w-2 sm:h-3.5 sm:w-2 ${COLOR[c.status]}`}
           title={`${c.date} — ${c.status}`}
         />
       ))}

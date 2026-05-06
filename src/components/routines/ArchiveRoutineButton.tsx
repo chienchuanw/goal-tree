@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import { archiveRoutineAction } from '@/services/routines.actions';
 
 type Props = { id: string };
@@ -11,9 +10,13 @@ export function ArchiveRoutineButton({ id }: Props) {
         await archiveRoutineAction(id);
       }}
     >
-      <Button type="submit" variant="ghost" size="sm">
+      <button
+        type="submit"
+        className="num text-[10px] uppercase tracking-[0.18em] text-ink-faint transition-colors hover:text-signal"
+        aria-label="Archive routine"
+      >
         Archive
-      </Button>
+      </button>
     </form>
   );
 }

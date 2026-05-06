@@ -8,11 +8,34 @@ type Cell = 'unset' | 'done' | 'partial' | 'skipped';
 
 const cellOf = (s: CycleStatus): Cell => s ?? 'unset';
 
-const CONFIG: Record<Cell, { next: CycleStatus; label: string; color: string }> = {
-  unset:   { next: 'done',    label: 'Mark done', color: 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200' },
-  done:    { next: 'partial', label: 'Done',      color: 'bg-emerald-500 text-white hover:bg-emerald-600' },
-  partial: { next: 'skipped', label: 'Partial',   color: 'bg-amber-400 text-zinc-900 hover:bg-amber-500' },
-  skipped: { next: null,      label: 'Skipped',   color: 'bg-zinc-300 text-zinc-700 hover:bg-zinc-400' },
+const CONFIG: Record<
+  Cell,
+  { next: CycleStatus; label: string; classes: string; glyph: string }
+> = {
+  unset: {
+    next: 'done',
+    label: 'Mark done',
+    classes: 'bg-paper text-ink-faint border-ink-faint hover:border-ink hover:text-ink',
+    glyph: '',
+  },
+  done: {
+    next: 'partial',
+    label: 'Done',
+    classes: 'bg-ink text-paper border-ink hover:bg-ink-soft',
+    glyph: '✓',
+  },
+  partial: {
+    next: 'skipped',
+    label: 'Partial',
+    classes: 'bg-paper text-ink border-ink hover:bg-paper-tint',
+    glyph: '/',
+  },
+  skipped: {
+    next: null,
+    label: 'Skipped',
+    classes: 'bg-paper-tint text-ink-muted border-rule hover:border-ink-muted',
+    glyph: '—',
+  },
 };
 
 type SetStatusAction = (
@@ -28,7 +51,12 @@ type Props = {
   setStatusAction: SetStatusAction;
 };
 
-export function StatusCycleButton({ routineId, date, initialStatus, setStatusAction }: Props) {
+export function StatusCycleButton({
+  routineId,
+  date,
+  initialStatus,
+  setStatusAction,
+}: Props) {
   const [optimistic, setOptimistic] = useState<CycleStatus>(initialStatus);
   const [pending, startTransition] = useTransition();
 
@@ -49,9 +77,13 @@ export function StatusCycleButton({ routineId, date, initialStatus, setStatusAct
       onClick={onClick}
       disabled={pending}
       aria-label={`Status: ${cfg.label}. Click to cycle.`}
-      className={`rounded px-2 py-1 text-xs font-medium transition-colors ${cfg.color} disabled:opacity-60`}
+      title={cfg.label}
+      className={[
+        'inline-flex h-9 w-9 shrink-0 items-center justify-center border text-base font-medium leading-none transition-colors disabled:opacity-60',
+        cfg.classes,
+      ].join(' ')}
     >
-      {cfg.label}
+      <span className="num">{cfg.glyph || ' '}</span>
     </button>
   );
 }

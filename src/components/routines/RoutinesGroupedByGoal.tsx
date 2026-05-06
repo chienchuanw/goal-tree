@@ -16,14 +16,26 @@ export function RoutinesGroupedByGoal({ rows, today }: Props) {
     groups.set(key, arr);
   }
 
+  const entries = [...groups.entries()];
+
   return (
-    <div className="space-y-6">
-      {[...groups.entries()].map(([title, group]) => (
-        <section key={title}>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">
-            {title}
-          </h2>
-          <ul className="space-y-2">
+    <div className="space-y-12 md:space-y-16">
+      {entries.map(([title, group], i) => (
+        <section key={title} className="space-y-4">
+          <div className="flex items-baseline justify-between gap-4 border-b border-rule pb-3">
+            <div className="flex items-baseline gap-3">
+              <span className="num text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+                §{String(i + 1).padStart(2, '0')}
+              </span>
+              <h2 className="text-base md:text-lg font-medium tracking-tight text-ink">
+                {title}
+              </h2>
+            </div>
+            <span className="num text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+              {String(group.length).padStart(2, '0')} routine{group.length === 1 ? '' : 's'}
+            </span>
+          </div>
+          <ul className="divide-y divide-rule border-b border-rule">
             {group.map((row) => (
               <RoutineRow key={row.routine.id} row={row} today={today} />
             ))}
