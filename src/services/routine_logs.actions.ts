@@ -1,16 +1,9 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { auth } from '@/lib/auth';
+import { requireUserId } from '@/lib/require-user-id';
 import { SetRoutineStatusSchema } from '@/lib/zod/routines';
 import { setRoutineStatus } from './routine_logs';
-
-async function requireUserId(): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/signin');
-  return session.user.id;
-}
 
 export type SetStatusResult =
   | { status: 'ok' }

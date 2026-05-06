@@ -6,7 +6,7 @@ export type AppliesPredicate = (date: string) => boolean;
 
 const DAY_MS = 86_400_000;
 
-function shiftDate(date: string, deltaDays: number): string {
+export function shiftDate(date: string, deltaDays: number): string {
   const t = Date.parse(date + 'T00:00:00Z') + deltaDays * DAY_MS;
   return new Date(t).toISOString().slice(0, 10);
 }

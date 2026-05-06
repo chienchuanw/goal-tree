@@ -4,6 +4,7 @@ import { goals, routines, routineLogs, type Routine, type RoutineLog } from '@/d
 import { appliesOn, type RoutineCadence } from '@/domain/cadence';
 import {
   build30DayHeatmap,
+  shiftDate,
   streakLength,
   type HeatmapCellStatus,
   type StreakLog,
@@ -22,31 +23,28 @@ export async function listTodayRoutines(
   today: string,
   db: DbOrTx = defaultDb,
 ): Promise<TodayRoutineRow[]> {
-  const since = new Date(Date.parse(today + 'T00:00:00Z') - 29 * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
+  const since = shiftDate(today, -29);
 
-  // Step 1: pull the user's non-archived routines + parent goal title.
-  const routineRows = await db
-    .select({
-      routine: routines,
-      goalTitle: goals.title,
-    })
-    .from(routines)
-    .leftJoin(goals, eq(goals.id, routines.goalId))
-    .where(and(eq(routines.userId, userId), isNull(routines.archivedAt)))
-    .orderBy(asc(routines.createdAt));
-
-  // Step 2: pull all logs from the last 30 days for those routines.
-  const allLogs = await db
-    .select()
-    .from(routineLogs)
-    .innerJoin(
-      routines,
-      and(eq(routines.id, routineLogs.routineId), eq(routines.userId, userId)),
-    )
-    .where(gte(routineLogs.logDate, since))
-    .orderBy(asc(routineLogs.logDate));
+  const [routineRows, allLogs] = await Promise.all([
+    db
+      .select({
+        routine: routines,
+        goalTitle: goals.title,
+      })
+      .from(routines)
+      .leftJoin(goals, eq(goals.id, routines.goalId))
+      .where(and(eq(routines.userId, userId), isNull(routines.archivedAt)))
+      .orderBy(asc(routines.createdAt)),
+    db
+      .select()
+      .from(routineLogs)
+      .innerJoin(
+        routines,
+        and(eq(routines.id, routineLogs.routineId), eq(routines.userId, userId)),
+      )
+      .where(gte(routineLogs.logDate, since))
+      .orderBy(asc(routineLogs.logDate)),
+  ]);
 
   const logsByRoutine = new Map<string, RoutineLog[]>();
   for (const { routine_logs: log } of allLogs) {
@@ -55,7 +53,6 @@ export async function listTodayRoutines(
     logsByRoutine.set(log.routineId, arr);
   }
 
-  // Step 3: filter by cadence applying today, then assemble.
   const result: TodayRoutineRow[] = [];
   for (const { routine, goalTitle } of routineRows) {
     const cadence: RoutineCadence = {

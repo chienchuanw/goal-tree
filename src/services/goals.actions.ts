@@ -1,18 +1,9 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { auth } from '@/lib/auth';
+import { requireUserId } from '@/lib/require-user-id';
 import { naiveDateTimeToTaipeiIso } from '@/domain/taipei';
 import * as svc from './goals';
-
-async function requireUserId(): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    redirect('/signin');
-  }
-  return session.user.id;
-}
 
 export type CreateGoalActionState =
   | { status: 'idle' }
