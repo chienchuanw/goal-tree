@@ -14,31 +14,35 @@ describe('HoursCountdown', () => {
 
   describe('Given a deadline 4h 23m in the future', () => {
     describe('When mounted', () => {
-      it('Then renders "4h 23m"', () => {
+      it('Then exposes "4 hours 23 minutes remaining" via aria-label', () => {
         const deadline = new Date('2026-05-05T08:23:00Z').toISOString();
         render(<HoursCountdown deadlineAt={deadline} />);
-        expect(screen.getByText('4h 23m')).toBeInTheDocument();
+        expect(
+          screen.getByLabelText('4 hours 23 minutes remaining'),
+        ).toBeInTheDocument();
       });
     });
 
     describe('When 60 seconds elapse', () => {
-      it('Then renders "4h 22m"', () => {
+      it('Then exposes "4 hours 22 minutes remaining" via aria-label', () => {
         const deadline = new Date('2026-05-05T08:23:00Z').toISOString();
         render(<HoursCountdown deadlineAt={deadline} />);
         act(() => {
           vi.advanceTimersByTime(60_000);
         });
-        expect(screen.getByText('4h 22m')).toBeInTheDocument();
+        expect(
+          screen.getByLabelText('4 hours 22 minutes remaining'),
+        ).toBeInTheDocument();
       });
     });
   });
 
   describe('Given a deadline 2 days in the past', () => {
     describe('When mounted', () => {
-      it('Then renders "Overdue 2d"', () => {
+      it('Then exposes "Overdue 2 days" via aria-label', () => {
         const deadline = new Date('2026-05-03T04:00:00Z').toISOString();
         render(<HoursCountdown deadlineAt={deadline} />);
-        expect(screen.getByText('Overdue 2d')).toBeInTheDocument();
+        expect(screen.getByLabelText('Overdue 2 days')).toBeInTheDocument();
       });
     });
   });

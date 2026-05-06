@@ -30,7 +30,7 @@ describe('StatusCycleButton', () => {
           await user.click(screen.getByRole('button'));
         });
         expect(action).toHaveBeenCalledWith('r1', '2026-05-06', 'done');
-        expect(screen.getByRole('button')).toHaveTextContent(/done/i);
+        expect(screen.getByRole('button')).toHaveAccessibleName(/done/i);
       });
     });
   });
