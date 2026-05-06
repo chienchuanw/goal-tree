@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { db as defaultDb, type DbOrTx } from '@/db/client';
 import { goals, type Goal } from '@/db/schema';
 import { CreateGoalSchema, type CreateGoalInput } from '@/lib/zod/goals';
@@ -55,7 +55,7 @@ export async function archiveGoal(
   //  - already-archived rows match zero rows (idempotent)
   await db
     .update(goals)
-    .set({ status: 'archived', archivedAt: sql`now()` })
+    .set({ status: 'archived', archivedAt: sql`clock_timestamp()` })
     .where(
       and(
         eq(goals.id, id),
@@ -63,4 +63,34 @@ export async function archiveGoal(
         eq(goals.status, 'active'),
       ),
     );
+}
+
+export async function unarchiveGoal(
+  id: string,
+  userId: string,
+  db: DbOrTx = defaultDb,
+): Promise<void> {
+  // Goals use BOTH status enum and archivedAt — reset both.
+  // Predicate on status='archived' makes this idempotent + cross-user-safe.
+  await db
+    .update(goals)
+    .set({ status: 'active', archivedAt: null })
+    .where(
+      and(
+        eq(goals.id, id),
+        eq(goals.userId, userId),
+        eq(goals.status, 'archived'),
+      ),
+    );
+}
+
+export async function listArchivedGoals(
+  userId: string,
+  db: DbOrTx = defaultDb,
+): Promise<Goal[]> {
+  return db
+    .select()
+    .from(goals)
+    .where(and(eq(goals.userId, userId), eq(goals.status, 'archived')))
+    .orderBy(desc(goals.archivedAt));
 }
