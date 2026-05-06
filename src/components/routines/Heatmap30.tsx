@@ -1,7 +1,7 @@
 import type { HeatmapCellStatus } from '@/domain/streak';
 
 const COLOR: Record<HeatmapCellStatus, string> = {
-  done: 'bg-ink',
+  done: 'bg-emerald-500',
   partial: 'bg-ink-muted',
   skipped: 'bg-ink-faint/60',
   none: 'bg-paper-tint',
