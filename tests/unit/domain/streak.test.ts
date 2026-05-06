@@ -4,7 +4,10 @@ import { streakLength, build30DayHeatmap, type LogStatus } from '@/domain/streak
 const log = (date: string, status: LogStatus) => ({ logDate: date, status });
 
 // Helper: always-true predicate (daily routine).
-const allDays = (_d: string) => true;
+const allDays = (_d: string) => {
+  void _d;
+  return true;
+};
 
 // Helper: only weekdays {1,3,5} (Mon/Wed/Fri) apply.
 const mwf = (d: string) => [1, 3, 5].includes(new Date(d + 'T00:00:00Z').getUTCDay());
