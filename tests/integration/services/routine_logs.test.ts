@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { eq, and } from 'drizzle-orm';
-import { withRollback } from '../../helpers/db';
+import { withRollback, type TestDb } from '../../helpers/db';
 import { seedUser } from '../../helpers/fixtures';
+
+type Tx = Parameters<Parameters<TestDb['transaction']>[0]>[0];
 import { routines, routineLogs } from '@/db/schema';
 import {
   setRoutineStatus,
@@ -9,7 +11,7 @@ import {
 } from '@/services/routine_logs';
 import { todayInTaipei } from '@/domain/taipei';
 
-async function seedRoutine(tx: any, userId: string) {
+async function seedRoutine(tx: Tx, userId: string) {
   const [r] = await tx
     .insert(routines)
     .values({ userId, title: 'r', cadenceType: 'daily' })
