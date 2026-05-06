@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { daysUntil, hoursMinutesUntil } from '@/domain/countdown';
+import { CountdownBadge } from './CountdownBadge';
 
 type Props = {
   deadlineAt: string; // ISO 8601
@@ -20,13 +21,7 @@ export function HoursCountdown({ deadlineAt }: Props) {
   }, []);
 
   const days = daysUntil(deadline, now);
-  if (days < 0) {
-    return (
-      <Badge variant="destructive" aria-label={`Overdue ${-days} days`}>
-        Overdue {-days}d
-      </Badge>
-    );
-  }
+  if (days < 0) return <CountdownBadge daysRemaining={days} />;
 
   const { hours, minutes } = hoursMinutesUntil(deadline, now);
   return (

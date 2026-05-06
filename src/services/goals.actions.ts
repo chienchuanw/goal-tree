@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
+import { naiveDateTimeToTaipeiIso } from '@/domain/taipei';
 import * as svc from './goals';
 
 async function requireUserId(): Promise<string> {
@@ -28,9 +29,7 @@ export async function createGoalAction(
     title: String(formData.get('title') ?? '').trim(),
     description:
       String(formData.get('description') ?? '').trim() || undefined,
-    // <input type="datetime-local"> sends "YYYY-MM-DDTHH:mm" with no timezone.
-    // The MVP treats that wall clock as Asia/Taipei (UTC+8, no DST).
-    deadlineAt: localDateTimeToTaipeiIso(
+    deadlineAt: naiveDateTimeToTaipeiIso(
       String(formData.get('deadlineAt') ?? ''),
     ),
   };
@@ -51,10 +50,4 @@ export async function archiveGoalAction(id: string): Promise<void> {
   const userId = await requireUserId();
   await svc.archiveGoal(id, userId);
   revalidatePath('/goals');
-}
-
-function localDateTimeToTaipeiIso(value: string): string {
-  if (!value) return '';
-  // Taipei has no DST; offset is always +08:00.
-  return `${value}:00+08:00`;
 }

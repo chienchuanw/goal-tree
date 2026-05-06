@@ -40,3 +40,14 @@ export function isWithinBackfillWindow(targetDate: string, now: Date = new Date(
   const diffDays = Math.round((td - t) / 86_400_000);
   return diffDays >= 0 && diffDays <= 2;
 }
+
+/**
+ * Converts a naive `<input type="datetime-local">` value (e.g. `"2026-06-01T23:59"`,
+ * with no timezone) into an ISO string treated as Asia/Taipei wall-clock.
+ * Taipei has no DST so the offset is always `+08:00`.
+ * Returns `''` for empty input.
+ */
+export function naiveDateTimeToTaipeiIso(value: string): string {
+  if (!value) return '';
+  return `${value}:00+08:00`;
+}
