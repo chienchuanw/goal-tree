@@ -1,6 +1,6 @@
 # goal-tree — Task Plan
 
-> Snapshot taken 2026-05-06 on branch `dev` at commit `e59aa85` (post-PR-#5 merge + archive). Manus-style plan tracking the MVP build.
+> Snapshot taken 2026-05-06 on branch `dev` at commit `3ea7774` (post-PR-#6 merge + archive). **MVP complete — all three features shipped.**
 
 ## Goal
 
@@ -50,14 +50,18 @@ Established the runtime + tooling baseline so per-feature work can land on a sta
 - New shared infra: `src/lib/require-user-id.ts` extracted from goals + routines + routine_logs actions during simplify
 - Tests: 61/61 unit + 35/35 integration green; CI green
 
-### Phase 4: MVP feature 3 — Markdown notes with hierarchy — `pending`
+### Phase 4: MVP feature 3 — Markdown notes with hierarchy — `complete`
 
-`/notes` two-pane layout (tree sidebar + editor). Recursive note tree max 3 levels deep (depth 0/1/2 enforced by existing CHECK constraint). CodeMirror 6 in markdown mode with a Preview toggle. Save on blur + Cmd/Ctrl+S only — no debounced auto-save in MVP.
+`/notes` two-pane layout: recursive tree sidebar (max 3 levels) + CodeMirror 6 markdown editor with Preview toggle. Full CRUD: create (depth-respecting), save (blur + Cmd/Ctrl+S, no auto-save), rename, delete (cascade), move (depth-recomputing), set-goal (optional link). Markdown rendered with `react-markdown` + `rehype-sanitize` + `remark-gfm`.
 
 - Issue: [#3](https://github.com/chienchuanw/goal-tree/issues/3)
-- New runtime deps to add: `@codemirror/lang-markdown`, `@uiw/react-codemirror`, `react-markdown`, `rehype-sanitize`, `remark-gfm`
-- Editor MUST be client-only with dynamic import + `ssr: false` (CodeMirror is browser-only)
-- Will follow the same workflow
+- PR: [#6](https://github.com/chienchuanw/goal-tree/pull/6) — merged 2026-05-06 via rebase
+- Openspec: archived at `openspec/changes/archive/2026-05-06-markdown-notes-hierarchy/`; canonical spec at `openspec/specs/notes/spec.md` (10 requirements)
+- Plan: `docs/superpowers/plans/2026-05-06-markdown-notes-hierarchy.md`
+- New runtime deps installed: `@uiw/react-codemirror`, `@codemirror/lang-markdown`, `react-markdown`, `rehype-sanitize`, `remark-gfm`
+- New domain helpers shipped: `src/domain/notes-tree.ts` (`assembleTree`, `flatNoteOf`, `findInTree`, `maxDepth`, `collectIds`); `src/lib/markdown.tsx` (`<MarkdownPreview>` RSC); `src/services/notes.ts` includes `validateOwnedGoal` helper
+- New shared infra: `src/services/action-state.ts` extracted (`FormActionState` discriminated union now used by goals + routines + notes actions, replaces 5+ duplicate inline definitions)
+- Tests: 26 new in-scope unit tests + 18 new integration tests green; build clean
 
 ## Workflow per feature (proven on issue #1)
 
@@ -97,6 +101,8 @@ Established the runtime + tooling baseline so per-feature work can land on a sta
 
 ## Open work
 
-- Phase 4 (Notes) — not yet started
-- Optional cosmetic items deferred from PR #4 (see PR #4 status comment): `useLiveTicker` boundary recompute, `HoursCountdown` minute-boundary alignment
-- Optional from PR #5: `useOptimistic`-or-`useEffect`-reset for `StatusCycleButton` stale-prop after revalidation — happy path doesn't diverge today, but worth a revisit if a real race surfaces
+- **Pre-existing test failures on `dev` (out of MVP scope)**: commit `da5978d` (an unrelated UI redesign of authentication + UI components) introduced 4 failing unit tests — `HoursCountdown × 3` and `StatusCycleButton × 1`. The components were re-styled (`4h 23m` is now split across multiple `<span>` elements; cycle button DOM differs). These tests pre-date PR #6 and are NOT caused by it. Needs a separate fix (update assertions to match the new DOM, or revert the redesign if intentional).
+- **Optional cosmetic from PR #4**: `useLiveTicker` boundary recompute, `HoursCountdown` minute-boundary alignment.
+- **Optional from PR #5**: `useOptimistic`-or-`useEffect`-reset for `StatusCycleButton` stale-prop after revalidation — happy path doesn't diverge today, but worth a revisit if a real race surfaces.
+- **Optional from PR #6**: `moveNote` server-side cycle check (currently relies on the move dialog disabling descendants client-side; a real cycle guard would need a recursive walk in SQL); `<EditorPane>` body-state could be lifted out of `<NoteEditor>` if preview-while-typing becomes desired (currently preview reflects last-saved per design D4).
+- **Post-MVP enhancements** (deferred per design spec §11): note search/full-text, backlinks, tags, file/image attachments, auto-save while typing, drag-to-reorder tree, inline math (KaTeX/LaTeX), routine templates, push reminders.

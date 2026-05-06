@@ -177,7 +177,36 @@ Every implementation plan that introduces a `'use client'` component MUST pre-va
 
 > Props must be serializable for components in the "use client" entry file. "X" is a function that's not a Server Action. Rename "X" either to "action" or have its name end with "Action".
 
-We've now hit this twice — `onSuccess→onSuccessAction` (PR #4 / `74b9459`-equivalent) and `actionFn→setStatusAction` (PR #5 / `74b9459`). When writing a plan: scan every `type Props = { ... }` block for non-serializable function fields and rename them to end in `Action` *in the plan*, not after the fact.
+The rule fires on **EVERY function-typed prop** on a `'use client'` component — not just callbacks that ultimately invoke a server action. Pure render-prop callbacks (`renderEdit: () => ReactNode`) are flagged just the same as `onSuccess: () => void`. Hit three times so far:
+
+- PR #4: `onSuccess→onSuccessAction` (success callback that closed a dialog)
+- PR #5: `actionFn→setStatusAction` (callback that wrapped a server action)
+- PR #6: `<EditPreviewToggle>` `renderEdit/renderPreview` callbacks → refactored to `editView/previewView` `ReactNode` slots (with `hidden` attribute toggling visibility)
+
+**Two ways to satisfy the rule:**
+
+1. **Rename to `Action` suffix** — only when the prop genuinely invokes a server action. Don't lie with the suffix on a pure callback.
+2. **Use `ReactNode` slots instead of function props** — best for render-prop patterns. Both children mount; toggle visibility with `hidden` (or conditional rendering if mount cost is high).
+
+When writing a plan: scan every `type Props = { ... }` block for non-serializable function fields. Either rename to `Action` (if it crosses to a server action) or restructure to take `ReactNode` slots.
+
+## Postgres `now()` vs `clock_timestamp()` interacts with `withRollback`
+
+Postgres' `now()` is `transaction_timestamp()` — constant for the entire transaction. The repo's `tests/helpers/db.ts` `withRollback` runs each integration test inside a single tx (with a `RollbackSentinel` to undo). So inside a test, `now()` returns the same value at the INSERT (column default `defaultNow()`) and at any subsequent UPDATE. Result: tests that compare `before.updatedAt` and `after.updatedAt` fail with `expected X to be greater than X`.
+
+PR #6 hit this when `notes.saveNote` updated `updatedAt: sql\`now()\``. Fix: use `sql\`clock_timestamp()\`` (per-call wall clock) for all `updatedAt` bumps in service mutations. Schema column defaults can keep `defaultNow()` — only manual UPDATE bumps need the change.
+
+```ts
+// WRONG inside a withRollback test: never advances
+.set({ updatedAt: sql`now()` })
+
+// RIGHT: per-call wall clock
+.set({ updatedAt: sql`clock_timestamp()` })
+```
+
+Latent in goals + routines services where `now()` is used for `archivedAt` only — those don't compare timestamps in tests today, but if a test ever does, change it the same way.
+
+## Recurring "stale diagnostic" annoyance
 
 ## Recurring "stale diagnostic" annoyance
 

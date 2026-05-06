@@ -4,6 +4,42 @@ Reverse-chronological log of meaningful work sessions. Newest entry first.
 
 ---
 
+## 2026-05-06 — Issue #3 (Markdown notes with hierarchy) executed end-to-end + archived — **MVP complete**
+
+**Branch:** `issues/3` (now merged); archive landed on `dev` at `3ea7774`.
+
+**What happened (chronological):**
+
+1. `gh-dev` → branch `issues/3` linked to issue #3, based on `dev`.
+2. `openspec-propose` → `markdown-notes-hierarchy` change scaffolded; wrote `proposal.md`, `design.md` (11 design decisions D1–D11 covering single-query tree assembly, depth computed in createNote, moveNote with descendant walk, save semantics blur+Cmd/Ctrl+S no auto-save, react-markdown+rehype-sanitize+remark-gfm pipeline, CodeMirror dynamic-import with ssr:false, defense-in-depth via JOIN-less `userId` scoping, Zod 4 schemas, Next 16 client-prop names pre-validated, test layering), `specs/notes/spec.md` (10 requirements with Given/When/Then), `tasks.md` (11 task groups). Validates `--strict`.
+3. `superpowers:writing-plans` → `docs/superpowers/plans/2026-05-06-markdown-notes-hierarchy.md` with 11 tasks ~70 bite-sized steps.
+4. `superpowers:subagent-driven-development` → 4 batched implementer dispatches (Batch A: deps install / Batch B: domain assembleTree + Zod + markdown pipeline / Batch C: services + actions / Batch D: UI components + pages). RED→GREEN split commits visible in `git log` for TDD tasks (2, 5).
+5. Two in-flight fixes surfaced during execution:
+   - `now()` → `clock_timestamp()` in `notes.ts` UPDATE statements. Postgres' `now()` is `transaction_timestamp()` (constant per tx); `withRollback` runs each integration test inside one tx, so `updated_at` never advanced and the saveNote test failed (`expected X to be greater than X`). `clock_timestamp()` is the per-call wall-clock function.
+   - `<EditPreviewToggle>` refactored from `renderEdit/renderPreview` callbacks to `editView/previewView` ReactNode slots. Next 16's TS plugin flags ALL function-typed props on `'use client'` components — not just callbacks crossing to a server action. ReactNode slots sidestep the rule entirely without lying with an `Action` suffix on a non-action prop.
+6. Also caught and reported but NOT in scope: 4 PRE-EXISTING test failures on `dev` from commit `da5978d` (UI redesign of authentication/UI components) — `HoursCountdown × 3`, `StatusCycleButton × 1`. The DOM structure of `4h 23m` and the cycle button changed; tests need assertion updates. Flagged in PR #6 body as a follow-up.
+7. `simplify` → 3 parallel reviewers (reuse / quality / efficiency). Applied 6 high/medium-confidence findings in `refactor(notes): simplify after review` (`f1dd62c`):
+   - Extracted `FormActionState` shared discriminated union to `src/services/action-state.ts` — used 5+ times across goals + routines + notes actions; notes alone had 3 inline copies.
+   - Extracted `validateOwnedGoal(tx, goalId, userId)` helper inside `notes.ts` — replaced 2 copies (createNote + setNoteGoal).
+   - Killed double `listNoteTree` query on `/notes/[id]` — added pure `resolveBreadcrumb(rows, id)` so the page fetches the user's notes once and computes the breadcrumb in JS. Cuts one query per detail-page render.
+   - Cleaned up `buildParentOptions` in `/notes/[id]/page.tsx`: renamed misleading `movingMaxDepth` parameter to `subtreeHeight` (it's a delta, not a max), dropped `(... - 0)` dead arithmetic, renamed `isSelfOrDescendant` → `isMovingNode` with WHY comment about why descendants are skipped via recursion.
+   - Refactored `<NoteEditor>`: dropped the `dirty` `useEffect` (status flips inline in onChange handlers via `markUnsaved`); keydown listener now registers ONCE with the canonical `saveRef` pattern (fresh closure synced via a no-deps `useEffect`) instead of re-registering per keystroke.
+   - Moved `flatNoteOf` / `findInTree` / `maxDepth` / `collectIds` from page + service into `src/domain/notes-tree.ts` — eliminates duplication between page and service layer.
+8. `gh-pr` → pushed `issues/3`, opened PR [#6](https://github.com/chienchuanw/goal-tree/pull/6) against `dev`.
+
+**Final pre-merge checks:** lint clean, typecheck clean, 26 new in-scope unit tests + 18 new integration tests pass, build clean. The 4 pre-existing dev failures noted in PR body.
+
+**After merge (gh-archive this session):**
+
+- Switched to `dev`; PR #6 merged via rebase (`b32d267` is the post-rebase tip of notes work).
+- `openspec archive markdown-notes-hierarchy -y` → moved change to `openspec/changes/archive/2026-05-06-markdown-notes-hierarchy/` and created canonical `openspec/specs/notes/spec.md` (10 requirements). Committed as a separate `docs(openspec):` commit.
+- README updated: marked notes feature shipped with PR link; marked entire MVP as complete in the Status section header; added canonical spec + archive entries to the Docs section. Committed `3ea7774`.
+- This planning file + `task_plan.md` updated to reflect Phase 4 complete and MVP done.
+
+**MVP complete: all three features shipped on `dev`.**
+
+---
+
 ## 2026-05-06 — Issue #2 (Routines & daily status) executed end-to-end + archived
 
 **Branch:** `issues/2` (now merged); archive landed on `dev` at `e59aa85`.
