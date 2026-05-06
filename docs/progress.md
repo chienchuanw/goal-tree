@@ -4,6 +4,46 @@ Reverse-chronological log of meaningful work sessions. Newest entry first.
 
 ---
 
+## 2026-05-07 — Issue #7 (Archive confirmation + restore) executed + cleanup pass
+
+**Branch:** `issues/7` → merged to `dev` via rebase at `b8a111c`; subsequent post-merge commits land directly on `dev`.
+
+**What happened (chronological):**
+
+1. Brainstormed via `superpowers:brainstorming`: confirmed dedicated `/archive` page (vs. inline section / modal); confirmed both routines AND goals (not routines-only); confirmed single page with two sections; confirmed standard confirm dialog copy ("Archive this routine?" + "You can restore it anytime from /archive."); confirmed symmetric confirm-on-restore (vs. one-click restore); confirmed single reusable `<ConfirmActionButton>` component (vs. 4 bespoke shims) with 4 thin server-component shims for the action wiring.
+2. Wrote spec at `docs/superpowers/specs/2026-05-07-archive-confirm-and-restore-design.md` (commit `a5e9bd7`); plan at `docs/superpowers/plans/2026-05-07-archive-confirm-and-restore.md` (commit `7538647`). 11 TDD tasks.
+3. `gh-issue` → opened issue [#7](https://github.com/chienchuanw/goal-tree/issues/7) with the design + plan links and acceptance criteria.
+4. `gh-dev` → branch `issues/7` linked to issue #7, based on `dev`. (Note: the spec/plan commits stayed on local `dev` — they pre-date the branch and are visible in the issue body via the docs path, not via the branch diff.)
+5. `superpowers:subagent-driven-development` → fresh subagent per task. Task 1 (routines services) underwent a full implementer + spec-reviewer + code-quality-reviewer round; remaining tasks proceeded with implementer + targeted verification once the pattern was sound.
+6. Two in-flight discoveries during execution, both in-scope and bundled:
+   - **`now()` → `clock_timestamp()` (third occurrence)**: `archiveRoutine` (and later `archiveGoal`) used `sql\`now()\``, which is `transaction_timestamp()` in Postgres — constant within a transaction. The DESC-ordering test for `listArchivedRoutines` archived two routines back-to-back inside `withRollback` and asserted ordering by `archivedAt DESC`; the timestamps tied so ordering was non-deterministic. Switched both archive functions to `sql\`clock_timestamp()\`` (per-call wall-clock). Same root cause as the notes-feature `now()` fix; this is now a well-known recurring gotcha in this codebase.
+   - **DESC-order test brittleness**: even with `clock_timestamp()`, the original test relied on a `setTimeout(5)` between archive calls to space the timestamps. Code reviewer (Important issue, confidence 82) flagged this would flake under CI load. Fix: archive both routines, then explicitly UPDATE both rows' `archivedAt` to two known distinct timestamps (`2026-01-01`, `2026-01-02`) before asserting DESC order. Committed as `0e6dc73 test(routines): make DESC-order test deterministic`. Same pattern preemptively applied to the goals test in Task 2.
+7. Task 11 (E2E archive→restore Playwright happy path) was **skipped**. `tests/e2e/` has no auth-bypass fixture for the OAuth gate — adding one is its own scaffolding project. Flagged in the PR body as a follow-up.
+8. `simplify` → 3 parallel reviewers (reuse / quality / efficiency). Applied 3 high-confidence findings in `e8756fd refactor: extract formatTaipeiDateLabel; simplify ConfirmActionButton`:
+   - Extracted `formatTaipeiDateLabel(d: Date | null | undefined): string` to `src/domain/taipei.ts`. Replaced the duplicated `Intl.DateTimeFormat` block in `GoalCard.tsx` and folded out the new `formatArchivedAt` wrapper from the archive page.
+   - Removed unused `triggerClassName` prop on `<ConfirmActionButton>` (YAGNI — no caller ever passed it; the `DEFAULT_TRIGGER_CLASS` was the de-facto API).
+   - Replaced inline variant ternary with `const CONFIRM_CLASS: Record<Variant, string> = {...}` lookup. Cleaner, easier to extend if a third variant ever lands.
+   - Deferred: shim component duplication (4 archive/restore × routine/goal files differ only in copy + which server action they import — this duplication is justified by the `'use server'` boundary, which can't easily be hoisted into a shared component without losing per-action server-action identity); `useTransition` (`disabled:opacity-50` on the confirm button does provide visible pending feedback); try/catch around `await action()` (let errors bubble to Next.js error boundary).
+9. `gh-pr` → pushed `issues/7`, opened PR [#8](https://github.com/chienchuanw/goal-tree/pull/8) against `dev`. PR body included the "out of scope / follow-up" note about the skipped E2E test.
+
+**Final pre-merge checks:** typecheck clean, 65/65 integration green, 4/4 ConfirmActionButton unit tests green. (4 pre-existing unit failures from `da5978d` still red — addressed in the cleanup pass below, after merge.)
+
+**After merge — cleanup pass on `dev` (same session):**
+
+1. PR #8 was rebase-merged into `dev` at `b8a111c` while implementation was wrapping up. Local checkout landed on `dev`.
+2. Resolved the 4 pre-existing test failures (`HoursCountdown × 3`, `StatusCycleButton × 1`) that had been flagged across multiple prior PRs as out-of-scope. Root cause: tests asserted on visible text content (`getByText('4h 23m')`, `toHaveTextContent(/done/i)`) but the visible text is split across multiple `<span>` elements (HoursCountdown renders `4` `h` `23` `m` separately) or only present in the `aria-label` (StatusCycleButton renders just the `✓` glyph; "Done" lives in `aria-label="Status: Done. Click to cycle."`). Fix: query accessible names instead — `getByLabelText('4 hours 23 minutes remaining')` and `toHaveAccessibleName(/done/i)`. Committed as `105993a test: query accessible name instead of broken-up text content` directly to `dev` and pushed (flagged the direct-to-dev push to the user; the change is test-only and the user accepted). All 93 unit tests now pass.
+3. Visual request from the user: change `/today` heatmap "done" cells from black (`bg-ink`) to emerald. Updated `Heatmap30.tsx` color map (`done: 'bg-emerald-500'`); added a new test file `tests/unit/components/routines/Heatmap30.test.tsx` with 2 tests asserting the color mapping (the only "done" cell uses emerald; partial/skipped/none cells do not). Committed as `3ee423f fix(heatmap): update 'done' status color to emerald`.
+
+**HEAD after this session:** `3ee423f` on `dev`. All tests green: 93/93 unit + 65/65 integration; TypeScript clean.
+
+**Notes for future agents:**
+
+- `now()` vs `clock_timestamp()` is a recurring trap in this codebase whenever a service writes a "moment-of-event" timestamp inside a transaction that's later asserted on. Default to `clock_timestamp()` for archive/created-at/updated-at-style writes that are exercised by `withRollback` integration tests.
+- For Playwright tests, this repo will need an auth-state fixture (saved storage state from a one-time interactive login) before any E2E coverage can land. The `playwright.config.ts` is already wired to `pnpm dev`, just no auth seam exists.
+- The `superpowers:writing-plans` flow (vs. openspec) is the right choice for changes that sit inside existing capabilities (like this archive feature, which only adds endpoints to existing goals + routines capabilities) rather than introducing a new capability. OpenSpec proposes are best for net-new capabilities or capability-level redesigns.
+
+---
+
 ## 2026-05-06 — Issue #3 (Markdown notes with hierarchy) executed end-to-end + archived — **MVP complete**
 
 **Branch:** `issues/3` (now merged); archive landed on `dev` at `3ea7774`.

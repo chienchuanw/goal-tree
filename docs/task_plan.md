@@ -1,6 +1,6 @@
 # goal-tree — Task Plan
 
-> Snapshot taken 2026-05-06 on branch `dev` at commit `3ea7774` (post-PR-#6 merge + archive). **MVP complete — all three features shipped.**
+> Snapshot taken 2026-05-07 on branch `dev` at commit `3ee423f` (post-PR-#8 merge + heatmap color tweak). **MVP complete; first post-MVP enhancement (archive confirmation + restore) shipped.**
 
 ## Goal
 
@@ -63,6 +63,28 @@ Established the runtime + tooling baseline so per-feature work can land on a sta
 - New shared infra: `src/services/action-state.ts` extracted (`FormActionState` discriminated union now used by goals + routines + notes actions, replaces 5+ duplicate inline definitions)
 - Tests: 26 new in-scope unit tests + 18 new integration tests green; build clean
 
+### Phase 5: Post-MVP — Archive confirmation + restore — `complete`
+
+Confirmation dialog gates archive on `/today` and `/goals` (eliminates the one-click data-loss footgun); new `/archive` page lists archived routines and goals with a Restore action that opens the same confirmation pattern. One reusable `<ConfirmActionButton>` client component drives all four sites (Archive/Restore × Routine/Goal).
+
+- Issue: [#7](https://github.com/chienchuanw/goal-tree/issues/7)
+- PR: [#8](https://github.com/chienchuanw/goal-tree/pull/8) — merged 2026-05-06 via rebase
+- Workflow: this feature used `superpowers:writing-plans` directly (not openspec) since it sits inside existing capabilities (goals + routines) rather than introducing a new one. Spec at `docs/superpowers/specs/2026-05-07-archive-confirm-and-restore-design.md`; plan at `docs/superpowers/plans/2026-05-07-archive-confirm-and-restore.md`.
+- New service surface: `unarchiveRoutine`, `listArchivedRoutines`, `unarchiveGoal`, `listArchivedGoals` (userId-scoped, idempotent, cross-user-safe via predicate). `unarchiveGoal` resets BOTH `status='active'` AND `archivedAt=null` because goals use both fields.
+- New server actions: `unarchiveRoutineAction`, `unarchiveGoalAction`. Existing archive actions also gained `revalidatePath('/archive')`.
+- Side fix bundled in: `archiveRoutine` and `archiveGoal` switched from `sql\`now()\`` to `sql\`clock_timestamp()\``. `now()` is `transaction_timestamp()` (constant per tx), which made multi-archive-in-one-tx writes share a single timestamp and break DESC-ordered reads / `withRollback` ordering tests. Same root cause as the notes-feature `now()` fix.
+- New UI: `<ConfirmActionButton>` (shadcn Dialog wrapper, `useTransition` pending guard); 4 thin server-component shims; `app/(app)/archive/page.tsx` with two sections + restore actions; `NavTabs` gained "04 · Archive" entry (mobile grid `grid-cols-3` → `grid-cols-4`).
+- Final simplify pass: extracted `formatTaipeiDateLabel` to `src/domain/taipei.ts` (deduplicated from `GoalCard` and `/archive`); removed unused `triggerClassName` prop; replaced variant ternary with `Record<Variant, string>` lookup.
+- Skipped: Task 11 (E2E archive→restore happy path) — `tests/e2e/` has no auth-bypass scaffolding for the OAuth-gated app. Worth a separate issue if E2E coverage is wanted.
+- Tests: 10 new integration tests (5 unarchive routines + 5 unarchive goals) + 4 new ConfirmActionButton unit tests, all green; existing 65/65 integration + remaining unit tests green; TypeScript clean.
+
+### Phase 6: Cleanup pass — `complete`
+
+Two follow-up commits that landed directly on `dev` after PR #8 merged.
+
+- Fixed 4 pre-existing unit-test failures from the `da5978d` UI redesign — tests were querying split text nodes (`getByText('4h 23m')`) when the visible text is broken across multiple `<span>` elements. Switched to accessible-name queries: `getByLabelText('4 hours 23 minutes remaining')` for `<HoursCountdown>` (3 tests) and `toHaveAccessibleName(/done/i)` instead of `toHaveTextContent` for `<StatusCycleButton>` (1 test). Commit `105993a`. All 93 unit tests now pass.
+- Visual tweak: `Heatmap30` "done" cells now render as `bg-emerald-500` (was `bg-ink`/black). Added a 2-test unit file `tests/unit/components/routines/Heatmap30.test.tsx` asserting the color mapping. Commit `3ee423f`.
+
 ## Workflow per feature (proven on issue #1)
 
 1. `gh-dev` → branch `issues/N` from `dev`
@@ -101,7 +123,7 @@ Established the runtime + tooling baseline so per-feature work can land on a sta
 
 ## Open work
 
-- **Pre-existing test failures on `dev` (out of MVP scope)**: commit `da5978d` (an unrelated UI redesign of authentication + UI components) introduced 4 failing unit tests — `HoursCountdown × 3` and `StatusCycleButton × 1`. The components were re-styled (`4h 23m` is now split across multiple `<span>` elements; cycle button DOM differs). These tests pre-date PR #6 and are NOT caused by it. Needs a separate fix (update assertions to match the new DOM, or revert the redesign if intentional).
+- **E2E test scaffolding (skipped from PR #8)**: `tests/e2e/` is empty and there's no auth-bypass fixture for the GitHub-OAuth gate. Adding a Playwright auth-state fixture would unblock both the planned archive→restore happy path and any future E2E coverage.
 - **Optional cosmetic from PR #4**: `useLiveTicker` boundary recompute, `HoursCountdown` minute-boundary alignment.
 - **Optional from PR #5**: `useOptimistic`-or-`useEffect`-reset for `StatusCycleButton` stale-prop after revalidation — happy path doesn't diverge today, but worth a revisit if a real race surfaces.
 - **Optional from PR #6**: `moveNote` server-side cycle check (currently relies on the move dialog disabling descendants client-side; a real cycle guard would need a recursive walk in SQL); `<EditorPane>` body-state could be lifted out of `<NoteEditor>` if preview-while-typing becomes desired (currently preview reflects last-saved per design D4).

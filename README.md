@@ -11,6 +11,7 @@ Personal study helper and routine tracker. Single user, GitHub-OAuth gated, Verc
 | Goals & countdown — `/goals`, deadline countdown (day badge / live `Xh Ym` ticker / red `Overdue Nd`), create + archive | [#1](https://github.com/chienchuanw/goal-tree/issues/1) | Shipped (PR [#4](https://github.com/chienchuanw/goal-tree/pull/4) merged 2026-05-06) |
 | Routines & daily status — `/today`, cadence-aware list, status cycle, streak, 30-day heatmap | [#2](https://github.com/chienchuanw/goal-tree/issues/2) | Shipped (PR [#5](https://github.com/chienchuanw/goal-tree/pull/5) merged 2026-05-06) |
 | Markdown notes — `/notes`, hierarchical tree (max 3 levels), CodeMirror 6 editor + preview toggle | [#3](https://github.com/chienchuanw/goal-tree/issues/3) | Shipped (PR [#6](https://github.com/chienchuanw/goal-tree/pull/6) merged 2026-05-06) |
+| Archive confirmation + restore — confirm dialog before archiving routines/goals; new `/archive` page lists archived items with a Restore action | [#7](https://github.com/chienchuanw/goal-tree/issues/7) | Shipped (PR [#8](https://github.com/chienchuanw/goal-tree/pull/8) merged 2026-05-06) |
 
 ## Stack
 
@@ -74,6 +75,8 @@ Production deploys from `main` via Vercel. Build runs `pnpm build:ci`.
 - Goals feature plan: `docs/superpowers/plans/2026-05-06-goals-and-countdown.md`
 - Routines feature plan: `docs/superpowers/plans/2026-05-06-routines-and-daily-status.md`
 - Notes feature plan: `docs/superpowers/plans/2026-05-06-markdown-notes-hierarchy.md`
+- Archive-confirm + restore design: `docs/superpowers/specs/2026-05-07-archive-confirm-and-restore-design.md`
+- Archive-confirm + restore plan: `docs/superpowers/plans/2026-05-07-archive-confirm-and-restore.md`
 - Canonical specs (current): `openspec/specs/`
   - `openspec/specs/goals/spec.md` — Goals & countdown (8 requirements)
   - `openspec/specs/routines/spec.md` — Routines & daily status (9 requirements)
