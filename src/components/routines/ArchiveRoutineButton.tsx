@@ -1,22 +1,22 @@
 import { archiveRoutineAction } from '@/services/routines.actions';
+import { ConfirmActionButton } from '@/components/ui/ConfirmActionButton';
 
 type Props = { id: string };
 
 export function ArchiveRoutineButton({ id }: Props) {
+  const action = async () => {
+    'use server';
+    await archiveRoutineAction(id);
+  };
   return (
-    <form
-      action={async () => {
-        'use server';
-        await archiveRoutineAction(id);
-      }}
-    >
-      <button
-        type="submit"
-        className="num text-[10px] uppercase tracking-[0.18em] text-ink-faint transition-colors hover:text-signal"
-        aria-label="Archive routine"
-      >
-        Archive
-      </button>
-    </form>
+    <ConfirmActionButton
+      action={action}
+      triggerLabel="Archive"
+      triggerAriaLabel="Archive routine"
+      title="Archive this routine?"
+      description="You can restore it anytime from /archive."
+      confirmLabel="Archive"
+      variant="destructive"
+    />
   );
 }
