@@ -1,8 +1,9 @@
-import { TAIPEI_TZ } from './taipei';
+import { TAIPEI_TZ, todayInTaipei } from './taipei';
 
 const FORMATTER_CACHE = new Map<string, Intl.DateTimeFormat>();
 
 function dayInTz(d: Date, tz: string): string {
+  if (tz === TAIPEI_TZ) return todayInTaipei(d);
   let fmt = FORMATTER_CACHE.get(tz);
   if (!fmt) {
     fmt = new Intl.DateTimeFormat('en-CA', {

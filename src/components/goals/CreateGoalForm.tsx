@@ -1,10 +1,11 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { todayInTaipei } from '@/domain/taipei';
 import {
   createGoalAction,
   type CreateGoalActionState,
@@ -13,16 +14,7 @@ import {
 const initialState: CreateGoalActionState = { status: 'idle' };
 
 function defaultDeadlineLocalString(): string {
-  // Default: tomorrow 23:59 wall-clock in Asia/Taipei.
-  // <input type="datetime-local"> accepts "YYYY-MM-DDTHH:mm" with no timezone.
-  const fmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Taipei',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  const tomorrowUtc = new Date(Date.now() + 86_400_000);
-  return `${fmt.format(tomorrowUtc)}T23:59`;
+  return `${todayInTaipei(new Date(Date.now() + 86_400_000))}T23:59`;
 }
 
 type Props = { onSuccessAction?: () => void };
@@ -33,9 +25,11 @@ export function CreateGoalForm({ onSuccessAction }: Props) {
     initialState,
   );
 
-  if (state.status === 'success' && onSuccessAction) {
-    queueMicrotask(onSuccessAction);
-  }
+  const defaultDeadline = useMemo(() => defaultDeadlineLocalString(), []);
+
+  useEffect(() => {
+    if (state.status === 'success') onSuccessAction?.();
+  }, [state.status, onSuccessAction]);
 
   return (
     <form action={formAction} className="space-y-4">
@@ -54,7 +48,7 @@ export function CreateGoalForm({ onSuccessAction }: Props) {
           name="deadlineAt"
           type="datetime-local"
           required
-          defaultValue={defaultDeadlineLocalString()}
+          defaultValue={defaultDeadline}
         />
       </div>
       {state.status === 'error' ? (
