@@ -44,4 +44,12 @@ export async function archiveRoutineAction(id: string): Promise<void> {
   const userId = await requireUserId();
   await svc.archiveRoutine(id, userId);
   revalidatePath('/today');
+  revalidatePath('/archive');
+}
+
+export async function unarchiveRoutineAction(id: string): Promise<void> {
+  const userId = await requireUserId();
+  await svc.unarchiveRoutine(id, userId);
+  revalidatePath('/archive');
+  revalidatePath('/today');
 }

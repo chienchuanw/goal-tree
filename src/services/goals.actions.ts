@@ -41,4 +41,12 @@ export async function archiveGoalAction(id: string): Promise<void> {
   const userId = await requireUserId();
   await svc.archiveGoal(id, userId);
   revalidatePath('/goals');
+  revalidatePath('/archive');
+}
+
+export async function unarchiveGoalAction(id: string): Promise<void> {
+  const userId = await requireUserId();
+  await svc.unarchiveGoal(id, userId);
+  revalidatePath('/archive');
+  revalidatePath('/goals');
 }
