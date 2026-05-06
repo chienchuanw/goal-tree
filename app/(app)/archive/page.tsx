@@ -1,23 +1,12 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
+import { formatTaipeiDateLabel } from '@/domain/taipei';
 import { listArchivedRoutines } from '@/services/routines';
 import { listArchivedGoals } from '@/services/goals';
 import { RestoreRoutineButton } from '@/components/routines/RestoreRoutineButton';
 import { RestoreGoalButton } from '@/components/goals/RestoreGoalButton';
 
 export const dynamic = 'force-dynamic';
-
-const DATE_FMT = new Intl.DateTimeFormat('en-GB', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-  timeZone: 'Asia/Taipei',
-});
-
-function formatArchivedAt(d: Date | null): string {
-  if (!d) return '';
-  return DATE_FMT.format(d).toUpperCase();
-}
 
 export default async function ArchivePage() {
   const session = await auth();
@@ -61,7 +50,7 @@ export default async function ArchivePage() {
                     {r.title}
                   </h3>
                   <p className="num text-[10px] uppercase tracking-[0.18em] text-ink-faint">
-                    {r.cadenceType} · archived {formatArchivedAt(r.archivedAt)}
+                    {r.cadenceType} · archived {formatTaipeiDateLabel(r.archivedAt)}
                   </p>
                 </div>
                 <RestoreRoutineButton id={r.id} />
@@ -94,7 +83,7 @@ export default async function ArchivePage() {
                     {g.title}
                   </h3>
                   <p className="num text-[10px] uppercase tracking-[0.18em] text-ink-faint">
-                    archived {formatArchivedAt(g.archivedAt)}
+                    archived {formatTaipeiDateLabel(g.archivedAt)}
                   </p>
                 </div>
                 <RestoreGoalButton id={g.id} />
