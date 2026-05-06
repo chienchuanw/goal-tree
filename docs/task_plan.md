@@ -1,6 +1,6 @@
 # goal-tree — Task Plan
 
-> Snapshot taken 2026-05-06 on branch `dev` at commit `aaec279`. Manus-style plan tracking the MVP build.
+> Snapshot taken 2026-05-06 on branch `dev` at commit `e59aa85` (post-PR-#5 merge + archive). Manus-style plan tracking the MVP build.
 
 ## Goal
 
@@ -38,14 +38,17 @@ Established the runtime + tooling baseline so per-feature work can land on a sta
 - Plan: `docs/superpowers/plans/2026-05-06-goals-and-countdown.md`
 - Tests: 27/27 unit + 12/12 integration green; CI green in 41s
 
-### Phase 3: MVP feature 2 — Routines & daily status — `pending`
+### Phase 3: MVP feature 2 — Routines & daily status — `complete`
 
-`/today` becomes the default landing page. Cadence-aware list of routines (daily or specific weekdays), tri-state cycle button (done / partial / skipped), 2-day backfill window, per-routine streak count + 30-day mini-heatmap.
+`/today` is now the default landing page after sign-in. Cadence-aware list of routines (daily or specific weekdays), tri-state cycle button (done / partial / skipped → unset deletes), 2-day backfill window, per-routine streak count + 30-day server-rendered heatmap. Defense-in-depth `userId` scoping on `routine_logs` via JOIN through `routines.userId` (no `user_id` column on the logs table).
 
 - Issue: [#2](https://github.com/chienchuanw/goal-tree/issues/2)
-- New domain helpers planned: `src/domain/cadence.ts` (`appliesOn`), `src/domain/streak.ts` (`streakLength`, `build30DayHeatmap`)
-- Reuses `isWithinBackfillWindow` from Phase 1 foundation for the 2-day backfill guard
-- Will follow the workflow validated in Phase 2 (see "Workflow per feature" below)
+- PR: [#5](https://github.com/chienchuanw/goal-tree/pull/5) — merged 2026-05-06 via rebase
+- Openspec: archived at `openspec/changes/archive/2026-05-06-routines-and-daily-status/`; canonical spec at `openspec/specs/routines/spec.md` (9 requirements)
+- Plan: `docs/superpowers/plans/2026-05-06-routines-and-daily-status.md`
+- New domain helpers shipped: `src/domain/cadence.ts` (`appliesOn`), `src/domain/streak.ts` (`streakLength`, `build30DayHeatmap`, exported `shiftDate`)
+- New shared infra: `src/lib/require-user-id.ts` extracted from goals + routines + routine_logs actions during simplify
+- Tests: 61/61 unit + 35/35 integration green; CI green
 
 ### Phase 4: MVP feature 3 — Markdown notes with hierarchy — `pending`
 
@@ -94,6 +97,6 @@ Established the runtime + tooling baseline so per-feature work can land on a sta
 
 ## Open work
 
-- Phase 3 (Routines) — not yet started
 - Phase 4 (Notes) — not yet started
 - Optional cosmetic items deferred from PR #4 (see PR #4 status comment): `useLiveTicker` boundary recompute, `HoursCountdown` minute-boundary alignment
+- Optional from PR #5: `useOptimistic`-or-`useEffect`-reset for `StatusCycleButton` stale-prop after revalidation — happy path doesn't diverge today, but worth a revisit if a real race surfaces

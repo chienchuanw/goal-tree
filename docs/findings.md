@@ -148,6 +148,37 @@ This applies uniformly across `tests/unit/`, `tests/integration/`, and `tests/co
 - `openspec archive <name> -y` does both archive + spec promotion in one step. The `-y` flag bypasses the warning about uncompleted task checkboxes in `openspec/changes/<name>/tasks.md` (which is fine because the work is tracked in the per-feature implementation plan instead).
 - The `simplify` skill dispatches three parallel reviewers (reuse / quality / efficiency). High-confidence findings should be applied; low-confidence ones flagged in the PR or this findings doc.
 
+## React 19 + ESLint: `set-state-in-effect`
+
+The `react-hooks/set-state-in-effect` ESLint rule is **strict** in React 19 — calling `setState(...)` directly in a `useEffect` body fails lint, even for the classic "reset state when prop changes" pattern. PR #5 hit this when trying to re-sync `StatusCycleButton`'s optimistic state to a refreshed `initialStatus` prop after `revalidatePath('/today')`.
+
+Allowed alternatives:
+
+1. **Set state during render with prev-prop comparison** (React's official "deriving state from props" idiom):
+
+   ```tsx
+   const [optimistic, setOptimistic] = useState(initialStatus);
+   const [prevInitial, setPrevInitial] = useState(initialStatus);
+   if (prevInitial !== initialStatus) {
+     setPrevInitial(initialStatus);
+     setOptimistic(initialStatus);
+   }
+   ```
+
+2. **`useOptimistic`** (React 19) — automatic resync to canonical prop.
+
+3. **Lift the key to the parent** so the component remounts on prop change.
+
+For PR #5 we deferred — happy path doesn't diverge (optimistic state matches what was just sent), so the marginal-value race fix wasn't worth the complexity.
+
+## Next 16 client-prop checklist (writing-plans gotcha)
+
+Every implementation plan that introduces a `'use client'` component MUST pre-validate prop names. Next 16's TS plugin warns:
+
+> Props must be serializable for components in the "use client" entry file. "X" is a function that's not a Server Action. Rename "X" either to "action" or have its name end with "Action".
+
+We've now hit this twice — `onSuccess→onSuccessAction` (PR #4 / `74b9459`-equivalent) and `actionFn→setStatusAction` (PR #5 / `74b9459`). When writing a plan: scan every `type Props = { ... }` block for non-serializable function fields and rename them to end in `Action` *in the plan*, not after the fact.
+
 ## Recurring "stale diagnostic" annoyance
 
 After creating a brand-new module (e.g., `src/lib/zod/goals.ts`), the editor's TS server briefly reports `Cannot find module '@/lib/zod/goals'` even though `pnpm typecheck` passes. Always verify with the actual `tsc --noEmit` before chasing the diagnostic — it's almost always stale.

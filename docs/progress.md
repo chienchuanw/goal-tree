@@ -4,6 +4,39 @@ Reverse-chronological log of meaningful work sessions. Newest entry first.
 
 ---
 
+## 2026-05-06 — Issue #2 (Routines & daily status) executed end-to-end + archived
+
+**Branch:** `issues/2` (now merged); archive landed on `dev` at `e59aa85`.
+
+**What happened (chronological):**
+
+1. `gh-dev` → branch `issues/2` linked to issue #2, based on `dev`.
+2. `openspec-propose` → `routines-and-daily-status` change scaffolded; wrote `proposal.md`, `design.md` (10 design decisions D1–D10 covering cadence model, pure-domain `appliesOn`, status enum + `null`=unset, streak counts done+partial, 30-cell server-rendered heatmap, single `setRoutineStatusAction` with backfill guard, defense-in-depth via JOIN through `routines.userId`, page composition, Zod 4 schemas, test layering), `specs/routines/spec.md` (9 requirements with Given/When/Then), `tasks.md` (10 task groups). Committed `5a52c9a`; validates `--strict`.
+3. `superpowers:writing-plans` → `docs/superpowers/plans/2026-05-06-routines-and-daily-status.md` with 11 tasks ~50 bite-sized steps. Committed `54efdea`.
+4. `superpowers:subagent-driven-development` → 4 batched implementer dispatches (Tasks 1-3 domain+Zod / 4-6 services / 7-10 actions+UI+page / 11 verification). RED→GREEN split commits for TDD tasks (1, 2, 4, 5, 6) visible in `git log`.
+5. One in-flight Next 16 fix surfaced during execution:
+   - `fix(routines): rename actionFn→setStatusAction (Next 16 client-prop rule)` (`74b9459`) — same class of issue as PR #4's `onSuccess→onSuccessAction`. Caught by Next 16's TS plugin warning client-component prop functions for non-serializable values must end in `Action`.
+6. `simplify` → 3 parallel reviewers (reuse / quality / efficiency). Applied 6 high/medium-confidence findings in `refactor(routines): simplify after review` (`4ea63e2`, -46 lines):
+   - Extracted shared `requireUserId` to `src/lib/require-user-id.ts` (replaces 3 copies in goals + routines + routine_logs actions)
+   - Exported `shiftDate` from `streak.ts`; deduped 30-day-since date math in `today.ts` and `routine_logs.ts`
+   - `Promise.all` for the two queries in `listTodayRoutines` — cuts one serial RTT on the RSC hot path
+   - `StatusCycleButton`: replaced 3 parallel `Record<string, ...>` lookup tables (keyed on stringified `null`) with one `CONFIG` keyed on a `Cell` sentinel union
+   - Trimmed WHAT-comments in services; kept WHY (defense-in-depth note referencing openspec D7)
+   - Deduped `cadenceType === 'weekdays'` check into single `isWeekdays` const
+   - Deferred: `useEffect`-reset for stale-prop on `StatusCycleButton` — `react-hooks/set-state-in-effect` lint rule rejects setState in effect body, and the React-blessed alternative (set-state-during-render with prev-prop comparison) added more complexity than the marginal-value race fix justified
+7. `gh-pr` → pushed `issues/2`, opened PR [#5](https://github.com/chienchuanw/goal-tree/pull/5) against `dev`.
+
+**Final pre-merge checks:** lint clean, typecheck clean, 61/61 unit, 35/35 integration, build clean.
+
+**After merge (gh-archive this session):**
+
+- Switched to `dev`; PR #5 merged via rebase (`52cecc8` is the post-rebase tip of routines work). Local `issues/2` branch had already been auto-cleaned.
+- `openspec archive routines-and-daily-status -y` → moved change to `openspec/changes/archive/2026-05-06-routines-and-daily-status/` and created canonical `openspec/specs/routines/spec.md` (9 requirements). Committed as a separate `docs(openspec):` commit.
+- README updated: marked routines feature shipped with PR link; added canonical spec + archive entries to the Docs section. Committed `e59aa85`.
+- This planning file + `task_plan.md` updated to reflect Phase 3 complete.
+
+---
+
 ## 2026-05-06 — gh-archive: openspec archive + README + planning files
 
 **Branch:** `dev` (post-merge of PR #4) at `aaec279`.
