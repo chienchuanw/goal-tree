@@ -5,6 +5,11 @@ import { EditPreviewToggle } from '@/components/notes/EditPreviewToggle';
 
 afterEach(() => cleanup());
 
+function visiblePane(): 'edit' | 'preview' {
+  const edit = screen.getByTestId('edit-pane').closest('[hidden]');
+  return edit ? 'preview' : 'edit';
+}
+
 describe('EditPreviewToggle', () => {
   describe('Given mode is "edit"', () => {
     describe('When clicked', () => {
@@ -13,15 +18,15 @@ describe('EditPreviewToggle', () => {
         render(
           <EditPreviewToggle
             initialMode="edit"
-            renderEdit={() => <div data-testid="edit-pane">EDIT</div>}
-            renderPreview={() => <div data-testid="preview-pane">PREVIEW</div>}
+            editView={<div data-testid="edit-pane">EDIT</div>}
+            previewView={<div data-testid="preview-pane">PREVIEW</div>}
           />,
         );
-        expect(screen.getByTestId('edit-pane')).toBeInTheDocument();
-        expect(screen.queryByTestId('preview-pane')).toBeNull();
+        expect(visiblePane()).toBe('edit');
+        expect(screen.getByRole('button', { name: /preview/i })).toBeInTheDocument();
         await user.click(screen.getByRole('button', { name: /preview/i }));
-        expect(screen.queryByTestId('edit-pane')).toBeNull();
-        expect(screen.getByTestId('preview-pane')).toBeInTheDocument();
+        expect(visiblePane()).toBe('preview');
+        expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
       });
     });
   });
@@ -33,13 +38,13 @@ describe('EditPreviewToggle', () => {
         render(
           <EditPreviewToggle
             initialMode="preview"
-            renderEdit={() => <div data-testid="edit-pane">EDIT</div>}
-            renderPreview={() => <div data-testid="preview-pane">PREVIEW</div>}
+            editView={<div data-testid="edit-pane">EDIT</div>}
+            previewView={<div data-testid="preview-pane">PREVIEW</div>}
           />,
         );
-        expect(screen.getByTestId('preview-pane')).toBeInTheDocument();
+        expect(visiblePane()).toBe('preview');
         await user.click(screen.getByRole('button', { name: /edit/i }));
-        expect(screen.getByTestId('edit-pane')).toBeInTheDocument();
+        expect(visiblePane()).toBe('edit');
       });
     });
   });

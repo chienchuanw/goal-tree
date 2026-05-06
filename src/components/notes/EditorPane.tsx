@@ -18,7 +18,7 @@ export function EditorPane({ noteId, initialTitle, initialBody }: Props) {
   return (
     <EditPreviewToggle
       initialMode="edit"
-      renderEdit={() => (
+      editView={
         <NoteEditor
           noteId={noteId}
           initialTitle={initialTitle}
@@ -29,8 +29,8 @@ export function EditorPane({ noteId, initialTitle, initialBody }: Props) {
             return r;
           }}
         />
-      )}
-      renderPreview={() => <NotePreview bodyMd={body} />}
+      }
+      previewView={<NotePreview bodyMd={body} />}
     />
   );
 }

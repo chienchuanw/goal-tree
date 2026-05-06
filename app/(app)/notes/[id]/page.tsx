@@ -41,7 +41,6 @@ function buildParentOptions(
 ): Array<{ id: string; title: string; depth: number; disabled: boolean }> {
   for (const n of tree) {
     const isSelfOrDescendant = n.id === movingId;
-    const wouldOverflow = movingMaxDepth - (n.depth + 1 - 0) > 0; // descendant would exceed 2
     out.push({
       id: n.id,
       title: n.title,

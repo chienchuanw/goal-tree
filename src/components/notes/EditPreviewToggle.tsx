@@ -7,14 +7,14 @@ type Mode = 'edit' | 'preview';
 
 type Props = {
   initialMode?: Mode;
-  renderEdit: () => ReactNode;
-  renderPreview: () => ReactNode;
+  editView: ReactNode;
+  previewView: ReactNode;
 };
 
 export function EditPreviewToggle({
   initialMode = 'edit',
-  renderEdit,
-  renderPreview,
+  editView,
+  previewView,
 }: Props) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const isEdit = mode === 'edit';
@@ -30,7 +30,8 @@ export function EditPreviewToggle({
           {isEdit ? 'Preview' : 'Edit'}
         </Button>
       </div>
-      <div>{isEdit ? renderEdit() : renderPreview()}</div>
+      <div hidden={!isEdit}>{editView}</div>
+      <div hidden={isEdit}>{previewView}</div>
     </div>
   );
 }
