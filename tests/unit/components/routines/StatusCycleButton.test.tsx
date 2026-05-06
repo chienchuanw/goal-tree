@@ -23,7 +23,7 @@ describe('StatusCycleButton', () => {
             routineId="r1"
             date="2026-05-06"
             initialStatus={null}
-            actionFn={action}
+            setStatusAction={action}
           />,
         );
         await act(async () => {
@@ -44,7 +44,7 @@ describe('StatusCycleButton', () => {
             routineId="r1"
             date="2026-05-06"
             initialStatus="done"
-            actionFn={action}
+            setStatusAction={action}
           />,
         );
         await act(async () => {
@@ -64,7 +64,7 @@ describe('StatusCycleButton', () => {
             routineId="r1"
             date="2026-05-06"
             initialStatus="partial"
-            actionFn={action}
+            setStatusAction={action}
           />,
         );
         await act(async () => {
@@ -84,7 +84,7 @@ describe('StatusCycleButton', () => {
             routineId="r1"
             date="2026-05-06"
             initialStatus="skipped"
-            actionFn={action}
+            setStatusAction={action}
           />,
         );
         await act(async () => {

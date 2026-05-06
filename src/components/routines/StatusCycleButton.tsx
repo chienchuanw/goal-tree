@@ -25,7 +25,7 @@ const COLOR: Record<string, string> = {
   skipped: 'bg-zinc-300 text-zinc-700 hover:bg-zinc-400',
 };
 
-type ActionFn = (
+type SetStatusAction = (
   routineId: string,
   date: string,
   status: CycleStatus,
@@ -35,10 +35,10 @@ type Props = {
   routineId: string;
   date: string;
   initialStatus: CycleStatus;
-  actionFn: ActionFn;
+  setStatusAction: SetStatusAction;
 };
 
-export function StatusCycleButton({ routineId, date, initialStatus, actionFn }: Props) {
+export function StatusCycleButton({ routineId, date, initialStatus, setStatusAction }: Props) {
   const [optimistic, setOptimistic] = useState<CycleStatus>(initialStatus);
   const [pending, startTransition] = useTransition();
 
@@ -47,7 +47,7 @@ export function StatusCycleButton({ routineId, date, initialStatus, actionFn }: 
     const prev = optimistic;
     setOptimistic(next);
     startTransition(async () => {
-      const result = await actionFn(routineId, date, next);
+      const result = await setStatusAction(routineId, date, next);
       if (result.status === 'error') setOptimistic(prev); // rollback
     });
   }
