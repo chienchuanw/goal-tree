@@ -1,4 +1,5 @@
 import { daysUntil } from '@/domain/countdown';
+import { formatTaipeiDateLabel } from '@/domain/taipei';
 import type { Goal } from '@/db/schema';
 import { CountdownBadge } from './CountdownBadge';
 import { HoursCountdown } from './HoursCountdown';
@@ -10,17 +11,10 @@ type Props = {
   index?: number;
 };
 
-const DATE_FMT = new Intl.DateTimeFormat('en-GB', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-  timeZone: 'Asia/Taipei',
-});
-
 export function GoalCard({ goal, now, index }: Props) {
   const days = daysUntil(goal.deadlineAt, now);
   const useLiveTicker = days <= 1 && days >= 0;
-  const deadlineLabel = DATE_FMT.format(goal.deadlineAt).toUpperCase();
+  const deadlineLabel = formatTaipeiDateLabel(goal.deadlineAt);
 
   return (
     <article className="group relative flex h-full min-h-[200px] flex-col justify-between gap-6 bg-paper p-5 md:p-6 transition-colors hover:bg-paper-soft">

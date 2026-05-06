@@ -12,6 +12,19 @@ const weekdayFmt = new Intl.DateTimeFormat('en-US', {
   weekday: 'short',
 });
 
+const dateLabelFmt = new Intl.DateTimeFormat('en-GB', {
+  timeZone: TAIPEI_TZ,
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+});
+
+/** Formats a Date as an upper-case Taipei calendar label like "07 MAY 2026". */
+export function formatTaipeiDateLabel(d: Date | null | undefined): string {
+  if (!d) return '';
+  return dateLabelFmt.format(d).toUpperCase();
+}
+
 const WEEKDAY_INDEX: Record<string, number> = {
   Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
 };

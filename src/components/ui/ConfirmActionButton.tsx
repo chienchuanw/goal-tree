@@ -18,21 +18,26 @@ type Props = {
   action: () => Promise<void>;
   triggerLabel: string;
   triggerAriaLabel: string;
-  triggerClassName?: string;
   title: string;
   description: string;
   confirmLabel: string;
   variant?: Variant;
 };
 
-const DEFAULT_TRIGGER_CLASS =
+const TRIGGER_CLASS =
   'num text-[10px] uppercase tracking-[0.18em] text-ink-faint transition-colors hover:text-signal';
+
+const CONFIRM_CLASS: Record<Variant, string> = {
+  default:
+    'inline-flex items-center px-4 py-2 text-sm tracking-tight border border-ink bg-ink text-paper hover:bg-paper hover:text-ink disabled:opacity-50',
+  destructive:
+    'inline-flex items-center px-4 py-2 text-sm tracking-tight border border-signal bg-signal text-paper hover:bg-paper hover:text-signal disabled:opacity-50',
+};
 
 export function ConfirmActionButton({
   action,
   triggerLabel,
   triggerAriaLabel,
-  triggerClassName,
   title,
   description,
   confirmLabel,
@@ -48,11 +53,6 @@ export function ConfirmActionButton({
     });
   };
 
-  const confirmClass =
-    variant === 'destructive'
-      ? 'inline-flex items-center px-4 py-2 text-sm tracking-tight border border-signal bg-signal text-paper hover:bg-paper hover:text-signal disabled:opacity-50'
-      : 'inline-flex items-center px-4 py-2 text-sm tracking-tight border border-ink bg-ink text-paper hover:bg-paper hover:text-ink disabled:opacity-50';
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
@@ -60,7 +60,7 @@ export function ConfirmActionButton({
           <button
             type="button"
             aria-label={triggerAriaLabel}
-            className={triggerClassName ?? DEFAULT_TRIGGER_CLASS}
+            className={TRIGGER_CLASS}
           >
             {triggerLabel}
           </button>
@@ -88,7 +88,7 @@ export function ConfirmActionButton({
             type="button"
             onClick={onConfirm}
             disabled={isPending}
-            className={confirmClass}
+            className={CONFIRM_CLASS[variant]}
           >
             {confirmLabel}
           </button>
