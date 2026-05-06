@@ -100,8 +100,16 @@ describe('listArchivedRoutines', () => {
             tx,
           );
           await archiveRoutine(a.id, u.id, tx);
-          await new Promise((r) => setTimeout(r, 5));
           await archiveRoutine(b.id, u.id, tx);
+          // Force deterministic archivedAt ordering — avoids timing flakiness in CI.
+          await tx
+            .update(routines)
+            .set({ archivedAt: new Date('2026-01-01T00:00:00Z') })
+            .where(eq(routines.id, a.id));
+          await tx
+            .update(routines)
+            .set({ archivedAt: new Date('2026-01-02T00:00:00Z') })
+            .where(eq(routines.id, b.id));
 
           const rows = await listArchivedRoutines(u.id, tx);
           expect(rows.map((r) => r.title)).toEqual(['B', 'A']);
