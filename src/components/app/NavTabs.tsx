@@ -9,6 +9,7 @@ const ITEMS: Item[] = [
   { href: '/today', label: 'Today', index: '01' },
   { href: '/goals', label: 'Goals', index: '02' },
   { href: '/notes', label: 'Notes', index: '03' },
+  { href: '/archive', label: 'Archive', index: '04' },
 ];
 
 function isActive(pathname: string | null, href: string): boolean {
@@ -58,7 +59,7 @@ export function NavTabsMobile() {
       className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-rule bg-paper/95 backdrop-blur-sm"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <ul className="grid grid-cols-3">
+      <ul className="grid grid-cols-4">
         {ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
           return (
