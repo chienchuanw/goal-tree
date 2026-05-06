@@ -19,7 +19,7 @@ export function RoutineRow({ row, today }: Props) {
             routineId={row.routine.id}
             date={today}
             initialStatus={initialStatus}
-            actionFn={setRoutineStatusAction}
+            setStatusAction={setRoutineStatusAction}
           />
           <span className="truncate font-medium">{row.routine.title}</span>
           <span className="ml-auto text-xs text-zinc-500">streak: {row.streak}</span>
