@@ -2,13 +2,25 @@
 
 Personal study helper and routine tracker. Single user, GitHub-OAuth gated, Vercel-deployed.
 
+## Status
+
+MVP is being built one feature at a time on top of a complete foundation (Auth.js, Drizzle schema, CI, shadcn/ui, Asia/Taipei domain helpers).
+
+| Feature | Issue | Status |
+|---|---|---|
+| Goals & countdown — `/goals`, deadline countdown (day badge / live `Xh Ym` ticker / red `Overdue Nd`), create + archive | [#1](https://github.com/chienchuanw/goal-tree/issues/1) | Shipped (PR [#4](https://github.com/chienchuanw/goal-tree/pull/4) merged 2026-05-06) |
+| Routines & daily status — `/today`, cadence-aware list, status cycle, streak, 30-day heatmap | [#2](https://github.com/chienchuanw/goal-tree/issues/2) | Queued |
+| Markdown notes — `/notes`, hierarchical tree (max 3 levels), CodeMirror 6 editor + preview toggle | [#3](https://github.com/chienchuanw/goal-tree/issues/3) | Queued |
+
 ## Stack
 
 Next 16 (App Router) · React 19 · Tailwind 4 · shadcn/ui · Drizzle ORM · Neon Postgres · Auth.js v5 · Vitest · Playwright (local only).
 
+Package manager pinned via `package.json` `"packageManager": "pnpm@10.33.0"` — CI's `pnpm/action-setup@v4` reads from this so local and CI never drift.
+
 ## Local development
 
-Prereqs: pnpm, Docker, Node 20+.
+Prereqs: pnpm 10.33+, Docker, Node 20+.
 
 ```bash
 # 1. Install deps
@@ -41,11 +53,15 @@ pnpm dev
 ## Workflow
 
 Every feature beyond foundation:
+
 1. openspec proposal under `openspec/changes/<change-id>/`
 2. GitHub issue via `gh-issue` skill
-3. Branch via `gh-dev` skill
-4. TDD inside the branch (BDD-style describe/it naming)
-5. PR via `gh-pr` skill — fills the PR template
+3. Branch via `gh-dev` skill (`issues/N`)
+4. Implementation plan via `superpowers:writing-plans` (saved to `docs/superpowers/plans/`)
+5. TDD inside the branch (BDD-style `describe('Given …', () => describe('When …', () => it('Then …')))` naming)
+6. `simplify` skill pass before opening PR
+7. PR via `gh-pr` skill — fills the PR template
+8. After merge: archive the openspec change with `openspec archive <name>` so the delta spec is promoted to `openspec/specs/<capability>/spec.md`
 
 ## Deploy
 
@@ -53,5 +69,10 @@ Production deploys from `main` via Vercel. Build runs `pnpm build:ci`.
 
 ## Docs
 
-- Spec: `docs/superpowers/specs/2026-05-05-goal-tree-mvp-design.md`
+- Design spec (whole MVP): `docs/superpowers/specs/2026-05-05-goal-tree-mvp-design.md`
 - Foundation plan: `docs/superpowers/plans/2026-05-05-goal-tree-foundation.md`
+- Goals feature plan: `docs/superpowers/plans/2026-05-06-goals-and-countdown.md`
+- Canonical specs (current): `openspec/specs/`
+  - `openspec/specs/goals/spec.md` — Goals & countdown (8 requirements)
+- Archived openspec changes: `openspec/changes/archive/`
+  - `2026-05-06-goals-and-countdown/`
