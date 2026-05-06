@@ -1,6 +1,8 @@
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { db as defaultDb, type DbOrTx } from '@/db/client';
 import { goals, notes, type Note } from '@/db/schema';
+
+export type { Note } from '@/db/schema';
 import {
   CreateNoteSchema,
   SaveNoteSchema,
