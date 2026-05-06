@@ -10,6 +10,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Goal Tree",
   description: "A Swiss-style discipline ledger for goals, routines, and notes.",
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
 };
 
 export const viewport: Viewport = {
