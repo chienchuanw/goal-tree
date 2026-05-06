@@ -4,25 +4,15 @@ import { useState, useTransition } from 'react';
 
 export type CycleStatus = 'done' | 'partial' | 'skipped' | null;
 
-const NEXT: Record<string, CycleStatus> = {
-  null: 'done',
-  done: 'partial',
-  partial: 'skipped',
-  skipped: null,
-};
+type Cell = 'unset' | 'done' | 'partial' | 'skipped';
 
-const LABEL: Record<string, string> = {
-  null: 'Mark done',
-  done: 'Done',
-  partial: 'Partial',
-  skipped: 'Skipped',
-};
+const cellOf = (s: CycleStatus): Cell => s ?? 'unset';
 
-const COLOR: Record<string, string> = {
-  null: 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200',
-  done: 'bg-emerald-500 text-white hover:bg-emerald-600',
-  partial: 'bg-amber-400 text-zinc-900 hover:bg-amber-500',
-  skipped: 'bg-zinc-300 text-zinc-700 hover:bg-zinc-400',
+const CONFIG: Record<Cell, { next: CycleStatus; label: string; color: string }> = {
+  unset:   { next: 'done',    label: 'Mark done', color: 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200' },
+  done:    { next: 'partial', label: 'Done',      color: 'bg-emerald-500 text-white hover:bg-emerald-600' },
+  partial: { next: 'skipped', label: 'Partial',   color: 'bg-amber-400 text-zinc-900 hover:bg-amber-500' },
+  skipped: { next: null,      label: 'Skipped',   color: 'bg-zinc-300 text-zinc-700 hover:bg-zinc-400' },
 };
 
 type SetStatusAction = (
@@ -42,26 +32,26 @@ export function StatusCycleButton({ routineId, date, initialStatus, setStatusAct
   const [optimistic, setOptimistic] = useState<CycleStatus>(initialStatus);
   const [pending, startTransition] = useTransition();
 
+  const cfg = CONFIG[cellOf(optimistic)];
+
   function onClick() {
-    const next = NEXT[String(optimistic)];
     const prev = optimistic;
-    setOptimistic(next);
+    setOptimistic(cfg.next);
     startTransition(async () => {
-      const result = await setStatusAction(routineId, date, next);
-      if (result.status === 'error') setOptimistic(prev); // rollback
+      const result = await setStatusAction(routineId, date, cfg.next);
+      if (result.status === 'error') setOptimistic(prev);
     });
   }
 
-  const key = String(optimistic);
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={pending}
-      aria-label={`Status: ${LABEL[key]}. Click to cycle.`}
-      className={`rounded px-2 py-1 text-xs font-medium transition-colors ${COLOR[key]} disabled:opacity-60`}
+      aria-label={`Status: ${cfg.label}. Click to cycle.`}
+      className={`rounded px-2 py-1 text-xs font-medium transition-colors ${cfg.color} disabled:opacity-60`}
     >
-      {LABEL[key]}
+      {cfg.label}
     </button>
   );
 }

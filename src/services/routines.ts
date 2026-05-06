@@ -51,9 +51,7 @@ export async function archiveRoutine(
   userId: string,
   db: DbOrTx = defaultDb,
 ): Promise<void> {
-  // Scope by id AND userId AND archivedAt IS NULL so:
-  //  - cross-user calls match zero rows (silent no-op)
-  //  - already-archived rows match zero rows (idempotent)
+  // Scoped WHERE makes this idempotent + a silent no-op for cross-user calls.
   await db
     .update(routines)
     .set({ archivedAt: sql`now()` })

@@ -1,15 +1,8 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { auth } from '@/lib/auth';
+import { requireUserId } from '@/lib/require-user-id';
 import * as svc from './routines';
-
-async function requireUserId(): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/signin');
-  return session.user.id;
-}
 
 export type CreateRoutineActionState =
   | { status: 'idle' }
@@ -22,18 +15,17 @@ export async function createRoutineAction(
 ): Promise<CreateRoutineActionState> {
   const userId = await requireUserId();
 
-  const cadenceType = String(formData.get('cadenceType') ?? '');
+  const isWeekdays = String(formData.get('cadenceType') ?? '') === 'weekdays';
   const goalIdRaw = String(formData.get('goalId') ?? '').trim();
   const weekdaysRaw = formData.getAll('weekdays').map((v) => Number(String(v)));
 
   const raw = {
     title: String(formData.get('title') ?? '').trim(),
-    cadenceType: cadenceType === 'weekdays' ? 'weekdays' : 'daily',
+    cadenceType: isWeekdays ? 'weekdays' : 'daily',
     goalId: goalIdRaw === '' ? null : goalIdRaw,
-    weekdays:
-      cadenceType === 'weekdays'
-        ? weekdaysRaw.filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
-        : undefined,
+    weekdays: isWeekdays
+      ? weekdaysRaw.filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+      : undefined,
   };
 
   try {
