@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { listNoteTree, type Note } from '@/services/notes';
-import { listActiveGoals } from '@/services/goals';
 import { assembleTree, type FlatNote } from '@/domain/notes-tree';
 import { NoteTreeSidebar } from '@/components/notes/NoteTreeSidebar';
 
@@ -22,10 +21,7 @@ export default async function NotesPage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/signin');
 
-  const [rows, _goals] = await Promise.all([
-    listNoteTree(session.user.id),
-    listActiveGoals(session.user.id),
-  ]);
+  const rows = await listNoteTree(session.user.id);
   const tree = assembleTree(rows.map(flatNoteOf));
 
   return (

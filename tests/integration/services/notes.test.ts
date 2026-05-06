@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { withRollback } from '../../helpers/db';
 import { seedUser } from '../../helpers/fixtures';
 import { goals, notes } from '@/db/schema';
 import {
   createNote,
   listNoteTree,
-  getNote,
   getNoteWithBreadcrumb,
   saveNote,
   renameNote,
