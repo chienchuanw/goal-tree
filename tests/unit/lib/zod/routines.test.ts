@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { CreateRoutineSchema, SetRoutineStatusSchema } from '@/lib/zod/routines';
+import {
+  CreateRoutineSchema,
+  SetRoutineStatusSchema,
+  IncrementRoutineLogSchema,
+  SetRoutineLogValueSchema,
+} from '@/lib/zod/routines';
+
+const UUID = '550e8400-e29b-41d4-a716-446655440000';
 
 describe('CreateRoutineSchema', () => {
   describe('Given a valid daily routine', () => {
@@ -163,5 +170,91 @@ describe('SetRoutineStatusSchema', () => {
         ).toThrow();
       });
     });
+  });
+});
+
+describe('CreateRoutineSchema — quantity kind', () => {
+  const base = { title: 'Exercise', cadenceType: 'daily' as const };
+
+  it('accepts a quantity routine with unit', () => {
+    expect(
+      CreateRoutineSchema.safeParse({ ...base, kind: 'quantity', unit: 'min' }).success,
+    ).toBe(true);
+  });
+
+  it('accepts a quantity routine with unit + dailyTarget', () => {
+    expect(
+      CreateRoutineSchema.safeParse({
+        ...base,
+        kind: 'quantity',
+        unit: 'min',
+        dailyTarget: 30,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('rejects a quantity routine without unit', () => {
+    expect(CreateRoutineSchema.safeParse({ ...base, kind: 'quantity' }).success).toBe(false);
+  });
+
+  it('rejects a check routine with unit set', () => {
+    expect(
+      CreateRoutineSchema.safeParse({ ...base, kind: 'check', unit: 'min' }).success,
+    ).toBe(false);
+  });
+
+  it('rejects dailyTarget <= 0', () => {
+    expect(
+      CreateRoutineSchema.safeParse({
+        ...base,
+        kind: 'quantity',
+        unit: 'min',
+        dailyTarget: 0,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('defaults kind to "check" when omitted', () => {
+    const result = CreateRoutineSchema.parse(base);
+    expect(result.kind).toBe('check');
+  });
+});
+
+describe('IncrementRoutineLogSchema', () => {
+  it('rejects non-positive delta', () => {
+    expect(
+      IncrementRoutineLogSchema.safeParse({ routineId: UUID, delta: 0 }).success,
+    ).toBe(false);
+    expect(
+      IncrementRoutineLogSchema.safeParse({ routineId: UUID, delta: -1 }).success,
+    ).toBe(false);
+  });
+
+  it('accepts a positive integer delta', () => {
+    expect(
+      IncrementRoutineLogSchema.safeParse({ routineId: UUID, delta: 15 }).success,
+    ).toBe(true);
+  });
+});
+
+describe('SetRoutineLogValueSchema', () => {
+  it('accepts value=0 (caller treats this as clear)', () => {
+    expect(
+      SetRoutineLogValueSchema.safeParse({
+        routineId: UUID,
+        date: '2026-05-08',
+        value: 0,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('rejects negative value', () => {
+    expect(
+      SetRoutineLogValueSchema.safeParse({
+        routineId: UUID,
+        date: '2026-05-08',
+        value: -1,
+      }).success,
+    ).toBe(false);
   });
 });
