@@ -13,6 +13,7 @@ The repo is built against Next.js 16. Several conventions changed from prior maj
 | Server actions | Various older patterns | `'use server'` directive at file or function level; canonical examples in `node_modules/next/dist/docs/01-app/01-getting-started/07-mutating-data.md` |
 | `revalidatePath` import | (varied) | `next/cache` |
 | `signOut` redirect option | `callbackUrl` (older NextAuth) | `redirectTo` (Auth.js v5) |
+| Route-segment `preferredRegion` on Vercel | Region codes like `'iad1'`, `'sin1'` | Only `'auto' \| 'global' \| 'home'`, and only with `runtime = 'edge'`. To pin a Node-runtime serverless function to a specific region, use `vercel.json` `regions` instead. See `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/02-route-segment-config/preferredRegion.md`. |
 
 Reference docs in the installed package:
 - `node_modules/next/dist/docs/01-app/01-getting-started/07-mutating-data.md` — server actions

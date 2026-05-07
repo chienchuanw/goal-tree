@@ -12,6 +12,7 @@ Personal study helper and routine tracker. Single user, GitHub-OAuth gated, Verc
 | Routines & daily status — `/today`, cadence-aware list, status cycle, streak, 30-day heatmap | [#2](https://github.com/chienchuanw/goal-tree/issues/2) | Shipped (PR [#5](https://github.com/chienchuanw/goal-tree/pull/5) merged 2026-05-06) |
 | Markdown notes — `/notes`, hierarchical tree (max 3 levels), CodeMirror 6 editor + preview toggle | [#3](https://github.com/chienchuanw/goal-tree/issues/3) | Shipped (PR [#6](https://github.com/chienchuanw/goal-tree/pull/6) merged 2026-05-06) |
 | Archive confirmation + restore — confirm dialog before archiving routines/goals; new `/archive` page lists archived items with a Restore action | [#7](https://github.com/chienchuanw/goal-tree/issues/7) | Shipped (PR [#8](https://github.com/chienchuanw/goal-tree/pull/8) merged 2026-05-06) |
+| Perf: co-locate Vercel functions with Neon DB — pin functions to `sin1` via `vercel.json`; raise `postgres-js` `max` so per-request `Promise.all` queries actually parallelize | [#9](https://github.com/chienchuanw/goal-tree/issues/9) | Shipped (PR [#10](https://github.com/chienchuanw/goal-tree/pull/10) merged 2026-05-07) |
 
 ## Stack
 
@@ -67,6 +68,8 @@ Every feature beyond foundation:
 ## Deploy
 
 Production deploys from `main` via Vercel. Build runs `pnpm build:ci`.
+
+Serverless functions are pinned to `sin1` (Singapore) in `vercel.json` so they sit in the same AWS region as the Neon Postgres host (`ap-southeast-1`). This keeps DB round-trips at single-digit milliseconds; without it, functions land in `iad1` and every query pays a ~220 ms trans-Pacific hop.
 
 ## Docs
 

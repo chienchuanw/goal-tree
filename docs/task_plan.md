@@ -1,6 +1,6 @@
 # goal-tree — Task Plan
 
-> Snapshot taken 2026-05-07 on branch `dev` at commit `3ee423f` (post-PR-#8 merge + heatmap color tweak). **MVP complete; first post-MVP enhancement (archive confirmation + restore) shipped.**
+> Snapshot taken 2026-05-07 on branch `dev` at commit `6da4560` (post-PR-#10 merge — perf co-location). **MVP complete; perf fix #1 shipped (sin1 pin + per-instance pool).**
 
 ## Goal
 
@@ -78,6 +78,19 @@ Confirmation dialog gates archive on `/today` and `/goals` (eliminates the one-c
 - Skipped: Task 11 (E2E archive→restore happy path) — `tests/e2e/` has no auth-bypass scaffolding for the OAuth-gated app. Worth a separate issue if E2E coverage is wanted.
 - Tests: 10 new integration tests (5 unarchive routines + 5 unarchive goals) + 4 new ConfirmActionButton unit tests, all green; existing 65/65 integration + remaining unit tests green; TypeScript clean.
 
+### Phase 7: Perf — region co-location + per-request query parallelism — `complete`
+
+Production diagnosed as 1–2 s per route + ~3.6 s per status-cycle click. Root cause: 3-region geographic mismatch between Vercel function (`iad1`, US East) and Neon DB (`ap-southeast-1`, Singapore) — every DB round-trip cost ~220 ms across the Pacific. Fix pins functions to `sin1` so they sit in the same AWS region as the DB; secondary fix raises `postgres-js` `max` so per-request `Promise.all` queries actually parallelize.
+
+- Issue: [#9](https://github.com/chienchuanw/goal-tree/issues/9)
+- PR: [#10](https://github.com/chienchuanw/goal-tree/pull/10) — merged 2026-05-07
+- Workflow: this issue skipped openspec (it's an infra/config tweak, not a capability change). Diagnosis was driven by Playwright MCP (RSC fetch timing + `x-vercel-id` headers).
+- Files touched:
+  - `vercel.json` (new): `{ "regions": ["sin1"] }`
+  - `src/db/client.ts`: `max: 1 → 5`; comment trimmed to the non-obvious `prepare: false` (Neon pgbouncer transaction-mode requirement)
+- Gotcha bundled into findings.md: Next 16's route-segment `preferredRegion` config only accepts `'auto' | 'global' | 'home'` on Vercel, and only with `runtime = 'edge'`. Pinning a Node-runtime serverless function to a specific Vercel region is done in `vercel.json` `regions`, not in route segment config.
+- Verification: deferred until next deploy. Acceptance criteria captured on the issue (warm `/today` < 500 ms, others < 300 ms, `x-vercel-id` shows `sin1`).
+
 ### Phase 6: Cleanup pass — `complete`
 
 Two follow-up commits that landed directly on `dev` after PR #8 merged.
@@ -120,6 +133,7 @@ Two follow-up commits that landed directly on `dev` after PR #8 merged.
 | Host Postgres on 5432 intercepted Docker Postgres | 1 | Moved Docker to host port 5433, updated env + plan |
 | Next 16 deprecated `middleware.ts` | 1 (post-build warning) | Renamed to `proxy.ts`; updated spec + plan |
 | Next 16 client-component prop function names must end in `Action` | 2 | Renamed `onSuccess` → `onSuccessAction` |
+| Next 16 route-segment `preferredRegion` rejects region codes on Vercel | 7 | Pinned function region in `vercel.json` `regions: ["sin1"]` instead |
 
 ## Open work
 

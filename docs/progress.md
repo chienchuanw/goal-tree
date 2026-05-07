@@ -4,6 +4,40 @@ Reverse-chronological log of meaningful work sessions. Newest entry first.
 
 ---
 
+## 2026-05-07 — Issue #9 (Perf: co-locate Vercel functions with Neon DB)
+
+**Branch:** `issues/9` → merged to `dev` via rebase at `6da4560`. **HEAD on `dev` after merge:** `6da4560`.
+
+**What happened (chronological):**
+
+1. User reported the production app feeling "incredibly slow" on tab switches and actions. Asked for an analysis.
+2. Used Playwright MCP to drive the live site (auth was already established via session cookie). Measured RSC payload fetch times warm and consistent across runs:
+   - `/today`: 1736–1791 ms
+   - `/archive`: 1253–1449 ms
+   - `/goals`: 804–870 ms
+   - `/notes`: 810–819 ms
+   - Status-cycle click: ~3.6 s end-to-end (server action POST + RSC refetch).
+3. Inspected response headers and found `x-vercel-id: hkg1::iad1::...` — function in `iad1` (US East / Virginia). DB host `ep-...-pooler.c-2.ap-southeast-1.aws.neon.tech` is in Singapore. Each DB round-trip across that gap is ~220 ms, and `/today` issues two repos worth of `Promise.all` queries (`listTodayRoutines` + `listActiveGoals`) — but `src/db/client.ts` had `max: 1`, serializing them.
+4. `gh-issue` → opened [#9](https://github.com/chienchuanw/goal-tree/issues/9) (`perf:` prefix, `enhancement` label) with measured baseline, geographic evidence, and ranked fix options.
+5. `gh-dev` → branch `issues/9` linked to issue #9, based on `dev`.
+6. **Discovery during implementation:** issue #9 originally suggested `export const preferredRegion = ['sin1']` in `app/(app)/layout.tsx`. Reading `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/02-route-segment-config/preferredRegion.md` revealed Next 16 + Vercel only accepts `'auto' | 'global' | 'home'` for that segment config, and only with `runtime = 'edge'`. Region codes throw. The correct mechanism for pinning a Node-runtime serverless function in Next 16 is `vercel.json` `regions`. Captured in findings.md and called out in the PR body.
+7. Three commits on `issues/9`:
+   - `c797a73 perf: pin Vercel functions to sin1 to co-locate with Neon DB` — new `vercel.json` with `{ "regions": ["sin1"] }`.
+   - `9470459 perf(db): raise postgres-js max to 5 to allow per-request query parallelism` — `max: 1 → 5` in `src/db/client.ts`.
+   - `689b98e refactor(db): trim db client comment to non-obvious why` — simplify-pass cleanup; kept only the `prepare: false` (Neon pgbouncer transaction-mode) rationale.
+8. `simplify` pass — diff was 6 lines so dispatching 3 cloud reviewers would've been overkill. Ran reuse / quality / efficiency reviews inline; only finding was a wordy 3-line comment, fixed in `689b98e`.
+9. `gh-pr` → pushed `issues/9`, opened PR [#10](https://github.com/chienchuanw/goal-tree/pull/10) against `dev`. PR body included the `preferredRegion` gotcha note so reviewers wouldn't expect the original layout edit.
+
+**Verification status:** deferred to post-deploy. Acceptance criteria captured on the issue (warm `/today` < 500 ms, others < 300 ms, `x-vercel-id` shows `sin1`, no Vercel function-log connection-limit errors).
+
+**Notes for future agents:**
+
+- For any production perf complaint, capture `x-vercel-id` first — the `<edge>::<function-region>::...` pattern instantly shows whether the function is co-located with downstream services.
+- When picking a Vercel region code for Neon DB co-location, `sin1` (Singapore) maps to the same AWS region as `*.ap-southeast-1.aws.neon.tech`. Other Vercel regions and their AWS equivalents are listed in Vercel's region docs.
+- The `postgres-js` `max: 1` pattern is a common "serverless cold-start" reflex but actively harms per-request parallelism. With Neon's pgbouncer pooler in transaction mode (the `-pooler` host), a small `max` (3–10) is safe and lets `Promise.all` actually parallelize.
+
+---
+
 ## 2026-05-07 — Issue #7 (Archive confirmation + restore) executed + cleanup pass
 
 **Branch:** `issues/7` → merged to `dev` via rebase at `b8a111c`; subsequent post-merge commits land directly on `dev`.
