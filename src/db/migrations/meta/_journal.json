@@ -15,6 +15,13 @@
       "when": 1777964981980,
       "tag": "0001_mysterious_maelstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778179678219,
+      "tag": "0002_quantity_routines",
+      "breakpoints": true
     }
   ]
 }
