@@ -1,4 +1,4 @@
-import { and, asc, eq, gte } from 'drizzle-orm';
+import { and, asc, eq, gte, sql } from 'drizzle-orm';
 import { db as defaultDb, type DbOrTx } from '@/db/client';
 import { routines, routineLogs, type RoutineLog } from '@/db/schema';
 import { isWithinBackfillWindow } from '@/domain/taipei';
@@ -108,21 +108,21 @@ export async function incrementRoutineLog(
       throw new Error('routine is not a quantity routine');
     }
 
-    const [existing] = await tx
-      .select({ value: routineLogs.value })
-      .from(routineLogs)
-      .where(and(eq(routineLogs.routineId, routineId), eq(routineLogs.logDate, date)))
-      .limit(1);
-
-    const newValue = (existing?.value ?? 0) + delta;
-    const status = deriveQuantityStatus(newValue, routine.dailyTarget) ?? 'partial';
+    // Compute addition in SQL so two concurrent increments can't lose a write.
+    // For status, treat null target as threshold=1 — any positive value is 'done'.
+    const threshold = routine.dailyTarget ?? 1;
+    const initialStatus: 'done' | 'partial' =
+      routine.dailyTarget == null || delta >= routine.dailyTarget ? 'done' : 'partial';
 
     await tx
       .insert(routineLogs)
-      .values({ routineId, logDate: date, status, value: newValue })
+      .values({ routineId, logDate: date, status: initialStatus, value: delta })
       .onConflictDoUpdate({
         target: [routineLogs.routineId, routineLogs.logDate],
-        set: { value: newValue, status },
+        set: {
+          value: sql`${routineLogs.value} + ${delta}`,
+          status: sql`CASE WHEN ${routineLogs.value} + ${delta} >= ${threshold} THEN 'done' ELSE 'partial' END`,
+        },
       });
   });
 }
