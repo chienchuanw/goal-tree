@@ -5,6 +5,11 @@ import { goals, routines, routineLogs } from '@/db/schema';
 import { listTodayRoutines } from '@/services/today';
 import { todayInTaipei, weekdayInTaipei } from '@/domain/taipei';
 
+const shift = (date: string, days: number) =>
+  new Date(Date.parse(date + 'T00:00:00Z') + days * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+
 describe('listTodayRoutines', () => {
   describe("Given a user with one daily routine, one weekday routine that doesn't apply today, and one archived routine", () => {
     describe('When listTodayRoutines is called', () => {
@@ -103,6 +108,41 @@ describe('listTodayRoutines', () => {
           expect(rows.map((r) => r.routine.title)).toEqual(['A']);
         });
       });
+    });
+  });
+});
+
+describe('listTodayRoutines — quantity routines', () => {
+  it('attaches a 30-day barChart series and surfaces todayValue', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const today = todayInTaipei();
+      const [r] = await tx
+        .insert(routines)
+        .values({
+          userId: u.id,
+          title: 'Exercise',
+          cadenceType: 'daily',
+          kind: 'quantity',
+          unit: 'min',
+          dailyTarget: 30,
+        })
+        .returning();
+      await tx.insert(routineLogs).values([
+        { routineId: r.id, logDate: today, status: 'done', value: 35 },
+        { routineId: r.id, logDate: shift(today, -1), status: 'partial', value: 15 },
+      ]);
+
+      const rows = await listTodayRoutines(u.id, today, tx);
+      const row = rows.find((x) => x.routine.id === r.id);
+      expect(row).toBeDefined();
+      expect(row!.routine.kind).toBe('quantity');
+      expect(row!.todayLog?.value).toBe(35);
+      expect(row!.barChart).toBeDefined();
+      expect(row!.barChart).toHaveLength(30);
+      expect(row!.barChart![29]).toEqual({ date: today, value: 35 });
+      expect(row!.barChart![28]).toEqual({ date: shift(today, -1), value: 15 });
+      expect(row!.barChart![0].value).toBeNull();
     });
   });
 });

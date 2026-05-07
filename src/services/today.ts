@@ -10,13 +10,26 @@ import {
   type StreakLog,
 } from '@/domain/streak';
 
+export type BarChartCell = { date: string; value: number | null };
+
 export type TodayRoutineRow = {
   routine: Routine;
   goalTitle: string | null;
   todayLog: RoutineLog | null;
   heatmap: Array<{ date: string; status: HeatmapCellStatus }>;
   streak: number;
+  barChart?: BarChartCell[];
 };
+
+function build30DayBarChart(logs: RoutineLog[], today: string): BarChartCell[] {
+  const byDate = new Map(logs.map((l) => [l.logDate, l.value ?? null]));
+  const cells: BarChartCell[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const date = shiftDate(today, -i);
+    cells.push({ date, value: byDate.get(date) ?? null });
+  }
+  return cells;
+}
 
 export async function listTodayRoutines(
   userId: string,
@@ -69,13 +82,17 @@ export async function listTodayRoutines(
     const applies = (date: string) => appliesOn(cadence, date);
     const todayLog = logs.find((l) => l.logDate === today) ?? null;
 
-    result.push({
+    const baseRow: TodayRoutineRow = {
       routine,
       goalTitle: goalTitle ?? null,
       todayLog,
       heatmap: build30DayHeatmap(streakLogs, today, applies),
       streak: streakLength(streakLogs, today, applies),
-    });
+    };
+    if (routine.kind === 'quantity') {
+      baseRow.barChart = build30DayBarChart(logs, today);
+    }
+    result.push(baseRow);
   }
   return result;
 }
