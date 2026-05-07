@@ -72,7 +72,7 @@ export default async function NotePage({ params }: Params) {
   return (
     <div className="grid h-full gap-0 md:grid-cols-[280px_1fr]">
       <NoteTreeSidebar tree={tree} activeId={id} />
-      <main className="space-y-4 p-6">
+      <main className="min-w-0 space-y-4 p-6">
         <header className="flex items-center justify-between gap-3">
           <nav className="text-xs text-zinc-500">
             {withCrumb.breadcrumb.map((n, i) => (
