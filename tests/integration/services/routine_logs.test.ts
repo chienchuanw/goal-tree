@@ -8,8 +8,25 @@ import { routines, routineLogs } from '@/db/schema';
 import {
   setRoutineStatus,
   listLogsForLast30Days,
+  incrementRoutineLog,
+  setRoutineLogValue,
 } from '@/services/routine_logs';
 import { todayInTaipei } from '@/domain/taipei';
+
+async function seedQuantityRoutine(tx: Tx, userId: string, target: number | null = 30) {
+  const [r] = await tx
+    .insert(routines)
+    .values({
+      userId,
+      title: 'Exercise',
+      cadenceType: 'daily',
+      kind: 'quantity',
+      unit: 'min',
+      dailyTarget: target,
+    })
+    .returning();
+  return r;
+}
 
 async function seedRoutine(tx: Tx, userId: string) {
   const [r] = await tx
@@ -193,6 +210,124 @@ describe('listLogsForLast30Days', () => {
           expect(rows).toEqual([]);
         });
       });
+    });
+  });
+});
+
+describe('incrementRoutineLog', () => {
+  it('inserts a row with delta as value and partial status when below target', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const r = await seedQuantityRoutine(tx, u.id, 30);
+      const today = todayInTaipei();
+      await incrementRoutineLog(r.id, u.id, today, 15, tx);
+      const [row] = await tx
+        .select()
+        .from(routineLogs)
+        .where(and(eq(routineLogs.routineId, r.id), eq(routineLogs.logDate, today)));
+      expect(row.value).toBe(15);
+      expect(row.status).toBe('partial');
+    });
+  });
+
+  it('flips status to done when cumulative value crosses target', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const r = await seedQuantityRoutine(tx, u.id, 30);
+      const today = todayInTaipei();
+      await tx
+        .insert(routineLogs)
+        .values({ routineId: r.id, logDate: today, status: 'partial', value: 15 });
+      await incrementRoutineLog(r.id, u.id, today, 20, tx);
+      const [row] = await tx
+        .select()
+        .from(routineLogs)
+        .where(and(eq(routineLogs.routineId, r.id), eq(routineLogs.logDate, today)));
+      expect(row.value).toBe(35);
+      expect(row.status).toBe('done');
+    });
+  });
+
+  it('rejects when routine kind is check', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const r = await seedRoutine(tx, u.id);
+      const today = todayInTaipei();
+      await expect(
+        incrementRoutineLog(r.id, u.id, today, 5, tx),
+      ).rejects.toThrow(/quantity/i);
+    });
+  });
+
+  it('rejects non-positive delta', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const r = await seedQuantityRoutine(tx, u.id, 30);
+      const today = todayInTaipei();
+      await expect(incrementRoutineLog(r.id, u.id, today, 0, tx)).rejects.toThrow();
+      await expect(incrementRoutineLog(r.id, u.id, today, -1, tx)).rejects.toThrow();
+    });
+  });
+
+  it('is a silent no-op for cross-user calls', async () => {
+    await withRollback(async (tx) => {
+      const owner = await seedUser(tx);
+      const intruder = await seedUser(tx);
+      const r = await seedQuantityRoutine(tx, owner.id, 30);
+      const today = todayInTaipei();
+      await incrementRoutineLog(r.id, intruder.id, today, 10, tx);
+      const rows = await tx
+        .select()
+        .from(routineLogs)
+        .where(eq(routineLogs.routineId, r.id));
+      expect(rows).toHaveLength(0);
+    });
+  });
+});
+
+describe('setRoutineLogValue', () => {
+  it('upserts a row with the absolute value and derived status', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const r = await seedQuantityRoutine(tx, u.id, 30);
+      const today = todayInTaipei();
+      await setRoutineLogValue(r.id, u.id, today, 45, tx);
+      const [row] = await tx
+        .select()
+        .from(routineLogs)
+        .where(eq(routineLogs.routineId, r.id));
+      expect(row.value).toBe(45);
+      expect(row.status).toBe('done');
+    });
+  });
+
+  it('deletes the row when value=0', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const r = await seedQuantityRoutine(tx, u.id, 30);
+      const today = todayInTaipei();
+      await tx
+        .insert(routineLogs)
+        .values({ routineId: r.id, logDate: today, status: 'partial', value: 10 });
+      await setRoutineLogValue(r.id, u.id, today, 0, tx);
+      const rows = await tx
+        .select()
+        .from(routineLogs)
+        .where(eq(routineLogs.routineId, r.id));
+      expect(rows).toHaveLength(0);
+    });
+  });
+});
+
+describe('setRoutineStatus rejects quantity routines', () => {
+  it('throws when called on a quantity routine', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const r = await seedQuantityRoutine(tx, u.id, 30);
+      const today = todayInTaipei();
+      await expect(
+        setRoutineStatus(r.id, u.id, today, 'done', tx),
+      ).rejects.toThrow(/check/i);
     });
   });
 });
