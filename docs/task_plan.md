@@ -1,6 +1,6 @@
 # goal-tree — Task Plan
 
-> Snapshot taken 2026-05-07 on branch `dev` at commit `6da4560` (post-PR-#10 merge — perf co-location). **MVP complete; perf fix #1 shipped (sin1 pin + per-instance pool).**
+> Snapshot taken 2026-05-08 on branch `dev` at commit `d59af11` (post-PR-#12 merge — quantity routines). **MVP complete; perf fix #1 + quantity routines shipped.**
 
 ## Goal
 
@@ -90,6 +90,23 @@ Production diagnosed as 1–2 s per route + ~3.6 s per status-cycle click. Root 
   - `src/db/client.ts`: `max: 1 → 5`; comment trimmed to the non-obvious `prepare: false` (Neon pgbouncer transaction-mode requirement)
 - Gotcha bundled into findings.md: Next 16's route-segment `preferredRegion` config only accepts `'auto' | 'global' | 'home'` on Vercel, and only with `runtime = 'edge'`. Pinning a Node-runtime serverless function to a specific Vercel region is done in `vercel.json` `regions`, not in route segment config.
 - Verification: deferred until next deploy. Acceptance criteria captured on the issue (warm `/today` < 500 ms, others < 300 ms, `x-vercel-id` shows `sin1`).
+
+### Phase 8: Quantity routines — `complete`
+
+`/today` now supports a second routine kind alongside check routines: quantity routines log a numeric value per day (e.g. minutes of exercise) with an optional unit and daily target, and render a 30-day bar chart with a goal line instead of the heatmap. Existing check routines are unchanged. Streak logic is reused via a derived `'done'` status, so `domain/streak` did not need to change.
+
+- Issue: [#11](https://github.com/chienchuanw/goal-tree/issues/11)
+- PR: [#12](https://github.com/chienchuanw/goal-tree/pull/12) — merged 2026-05-08 via rebase
+- Workflow: brainstorming → spec → writing-plans (12 tasks) → gh-issue → gh-dev → executed inline → gh-pr → review fix on the same branch → merge.
+- Spec: `docs/superpowers/specs/2026-05-08-quantity-routines-design.md`
+- Plan: `docs/superpowers/plans/2026-05-08-quantity-routines.md`
+- Schema: `routines` gets `kind` (`'check'|'quantity'`, default `'check'`), `unit`, `daily_target`. `routine_logs` gets `value`. Three CHECK constraints: `kind` enum, unit-required-iff-quantity, `daily_target > 0`. Existing rows backfill to `kind='check'` via column default.
+- New domain helper: `src/domain/quantity-routine.ts` `deriveQuantityStatus(value, target)` — used by `setRoutineLogValue` and form-side computations; returning `null` signals the caller to delete the row (zero-value days stay out of the streak window).
+- New services: `incrementRoutineLog`, `setRoutineLogValue` in `src/services/routine_logs.ts`. `setRoutineStatus` was gated to reject quantity routines so the two write paths can't trample each other.
+- **Race fix during review (commit `d59af11`):** the original `incrementRoutineLog` did read-modify-write at READ COMMITTED, which can lose increments under concurrent calls. Switched to atomic SQL-side addition: `INSERT ... ON CONFLICT DO UPDATE SET value = routine_logs.value + delta, status = CASE WHEN value + delta >= threshold THEN 'done' ELSE 'partial' END`. Removed the now-unreachable `?? 'partial'` fallback.
+- New components: `BarChart30` (pure CSS, 30 vertical bars, emerald-500 at/above target, emerald-300 partial, paper-tint zero, optional goal line) and `QuantityLogInput` (numeric input + Add, optimistic update via `useTransition`). `RoutineRow` branches on `routine.kind`. `CreateRoutineForm` gains a Kind toggle that conditionally surfaces Unit (required) and Daily target (optional).
+- Skipped: Task 12 (E2E happy path) — `tests/e2e/` still has only `.gitkeep` and no auth fixture; deferred until E2E scaffolding lands.
+- Tests: 11 new unit + 11 new integration tests; full suite 120 unit + 76 integration green.
 
 ### Phase 6: Cleanup pass — `complete`
 

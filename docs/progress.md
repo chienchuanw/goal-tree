@@ -4,6 +4,46 @@ Reverse-chronological log of meaningful work sessions. Newest entry first.
 
 ---
 
+## 2026-05-08 — Issue #11 (Quantity routines + 30-day bar chart)
+
+**Branch:** `issues/11` → merged to `dev` via rebase at `d59af11`. **HEAD on `dev` after merge:** `d59af11`.
+
+**What happened (chronological):**
+
+1. Brainstormed the feature via `superpowers:brainstorming`. Settled the foundational tradeoffs in five Q/A rounds: generic per-routine `unit` (not minutes-only), daily target with goal line, numeric input + Add UX (no chip rows), 30-day window matching `Heatmap30`, additive `kind` column with default `'check'` (not a separate table or replace-everything refactor). Aggregated-per-day was confirmed up front by the user before entering the full flow.
+2. Wrote the spec at `docs/superpowers/specs/2026-05-08-quantity-routines-design.md` (commit `e6fd616`). Self-review caught one ambiguity — the SQL pseudocode referenced `derived_status(...)` like a function, but it's a TS helper called before the upsert; clarified inline.
+3. Wrote the implementation plan at `docs/superpowers/plans/2026-05-08-quantity-routines.md` (commit `9f1dc18`) — 12 bite-sized TDD tasks covering schema migration, helper, zod, services, server actions, today projection, two new components, RoutineRow branch, form fields, and an E2E happy path.
+4. `gh-issue` → opened [#11](https://github.com/chienchuanw/goal-tree/issues/11) (`feat:` prefix, `enhancement` label) with the spec/plan links and acceptance criteria.
+5. `gh-dev` → branch `issues/11` linked to issue #11, based on `dev`.
+6. Executed tasks 1–11 inline in a single session. Each task: write/update test → run and verify red → implement → run and verify green → commit. Conventional commits (`feat(scope):`), no `Co-Authored-By` per the gh-dev discipline.
+7. Three real-world frictions surfaced during execution that the plan didn't predict:
+   - **Drizzle migration filename rename**: `pnpm db:generate` writes a random-suffix file (e.g. `0002_loud_silk_fever.sql`). Renaming the file to `0002_quantity_routines.sql` requires editing `src/db/migrations/meta/_journal.json` `tag` to match — otherwise `pnpm db:migrate` errors with `No file ./src/db/migrations/0002_loud_silk_fever.sql found`.
+   - **Vitest unit project test path**: the plan placed component tests under `src/components/routines/__tests__/`, but `vitest.config.mts` only includes `tests/unit/**/*.test.{ts,tsx}`. Relocated to `tests/unit/components/routines/`.
+   - **`@testing-library/react` cleanup**: this repo uses vitest 4 + happy-dom and does NOT auto-cleanup between tests. Existing component tests (`StatusCycleButton`, `Heatmap30`) all use explicit `afterEach(cleanup)`. Without that, `getByLabelText`/`getByRole` in the second test fails with "Found multiple elements" because the previous render's DOM lingers. Added `afterEach(cleanup)` to both new component test files.
+   - Minor: React 19 deprecates `React.FormEvent`; switched to `React.SyntheticEvent` in `QuantityLogInput`.
+8. Task 12 (Playwright E2E happy path) was **skipped**. `tests/e2e/` still has only `.gitkeep` and no auth-state fixture; adding an E2E test for this feature would require building the fixture first, which is its own scaffolding project (already a known follow-up from PR #8). Flagged in the PR body.
+9. `gh-pr` → pushed `issues/11`, opened PR [#12](https://github.com/chienchuanw/goal-tree/pull/12) against `dev`. PR body included the deferred-E2E note.
+10. Self-review on PR #12 (owner) flagged two issues:
+    - **Real**: `incrementRoutineLog`'s read-modify-write at the default READ COMMITTED isolation can lose increments. Two concurrent Add clicks (the optimistic UI returns before the server action settles, so a fast double-tap is plausible) can both read the same `value`, both compute `value + delta`, and the second `ON CONFLICT DO UPDATE` overwrites — not adds — the first write.
+    - **Dead code**: the `?? 'partial'` fallback after `deriveQuantityStatus` was unreachable given `delta > 0` is enforced upfront.
+11. Fix landed on `issues/11` as `32d6293 fix(routine_logs): make incrementRoutineLog atomic to prevent lost writes`:
+    - Removed the pre-read `SELECT value` entirely.
+    - The upsert now adds in SQL: `value: sql\`${routineLogs.value} + ${delta}\``, with `status` computed via `CASE WHEN ${routineLogs.value} + ${delta} >= ${threshold} THEN 'done' ELSE 'partial' END`. `threshold = routine.dailyTarget ?? 1` so a null target treats any positive value as `'done'`.
+    - Initial-status path (the INSERT branch) is now computed inline (`dailyTarget == null || delta >= dailyTarget ? 'done' : 'partial'`), eliminating the `deriveQuantityStatus`-can-return-null dependency for this code path.
+    - Existing 17 routine_logs integration tests still pass — the visible behaviour (target-crossing, partial-stays-partial, cross-user no-op, value=0 deletion) is unchanged.
+12. Posted a status comment on PR #12 confirming the fixes; PR was rebase-merged to `dev`.
+
+**Final pre-merge checks:** typecheck clean, 120/120 unit + 76/76 integration green, lint clean.
+
+**Notes for future agents:**
+
+- `pnpm db:generate` filename → if you want a stable name, rename the `.sql` AND update the `tag` in `src/db/migrations/meta/_journal.json`. Drizzle's migrator looks the file up by the journal tag.
+- For new component tests: place them in `tests/unit/components/...`, NOT in a `__tests__/` folder under `src/`. Add `afterEach(cleanup)` (this repo's pattern; see `StatusCycleButton.test.tsx`).
+- For server-action upserts that increment a counter, default to atomic SQL-side addition (`value = column + delta` inside `ON CONFLICT DO UPDATE`) rather than read-then-write. Postgres serializes the conflict resolution at the row level; the read-then-write pattern only serializes if you `SELECT ... FOR UPDATE`, which is heavier and easy to forget.
+- Brainstorming → spec → plan → execute discipline scaled fine for 12 tasks in one session, but the plan was wrong about the test directory and didn't anticipate `afterEach(cleanup)` — both are project conventions. When generating future plans, sample one existing test file in the same area before locking in the path/structure.
+
+---
+
 ## 2026-05-07 — Issue #9 (Perf: co-locate Vercel functions with Neon DB)
 
 **Branch:** `issues/9` → merged to `dev` via rebase at `6da4560`. **HEAD on `dev` after merge:** `6da4560`.

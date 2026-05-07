@@ -13,6 +13,7 @@ Personal study helper and routine tracker. Single user, GitHub-OAuth gated, Verc
 | Markdown notes — `/notes`, hierarchical tree (max 3 levels), CodeMirror 6 editor + preview toggle | [#3](https://github.com/chienchuanw/goal-tree/issues/3) | Shipped (PR [#6](https://github.com/chienchuanw/goal-tree/pull/6) merged 2026-05-06) |
 | Archive confirmation + restore — confirm dialog before archiving routines/goals; new `/archive` page lists archived items with a Restore action | [#7](https://github.com/chienchuanw/goal-tree/issues/7) | Shipped (PR [#8](https://github.com/chienchuanw/goal-tree/pull/8) merged 2026-05-06) |
 | Perf: co-locate Vercel functions with Neon DB — pin functions to `sin1` via `vercel.json`; raise `postgres-js` `max` so per-request `Promise.all` queries actually parallelize | [#9](https://github.com/chienchuanw/goal-tree/issues/9) | Shipped (PR [#10](https://github.com/chienchuanw/goal-tree/pull/10) merged 2026-05-07) |
+| Quantity routines — new `kind='quantity'` routine type that logs a numeric value per day with optional unit + daily target; 30-day bar chart on `/today` with goal line | [#11](https://github.com/chienchuanw/goal-tree/issues/11) | Shipped (PR [#12](https://github.com/chienchuanw/goal-tree/pull/12) merged 2026-05-08) |
 
 ## Stack
 
@@ -80,6 +81,8 @@ Serverless functions are pinned to `sin1` (Singapore) in `vercel.json` so they s
 - Notes feature plan: `docs/superpowers/plans/2026-05-06-markdown-notes-hierarchy.md`
 - Archive-confirm + restore design: `docs/superpowers/specs/2026-05-07-archive-confirm-and-restore-design.md`
 - Archive-confirm + restore plan: `docs/superpowers/plans/2026-05-07-archive-confirm-and-restore.md`
+- Quantity routines design: `docs/superpowers/specs/2026-05-08-quantity-routines-design.md`
+- Quantity routines plan: `docs/superpowers/plans/2026-05-08-quantity-routines.md`
 - Canonical specs (current): `openspec/specs/`
   - `openspec/specs/goals/spec.md` — Goals & countdown (8 requirements)
   - `openspec/specs/routines/spec.md` — Routines & daily status (9 requirements)

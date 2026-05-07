@@ -212,3 +212,47 @@ Latent in goals + routines services where `now()` is used for `archivedAt` only 
 ## Recurring "stale diagnostic" annoyance
 
 After creating a brand-new module (e.g., `src/lib/zod/goals.ts`), the editor's TS server briefly reports `Cannot find module '@/lib/zod/goals'` even though `pnpm typecheck` passes. Always verify with the actual `tsc --noEmit` before chasing the diagnostic — it's almost always stale.
+
+## Drizzle migration filename rename requires journal edit
+
+`pnpm db:generate` writes a random-suffix file like `0002_loud_silk_fever.sql`. To rename it to something stable (e.g. `0002_quantity_routines.sql`), you also have to update the corresponding `tag` field in `src/db/migrations/meta/_journal.json` — Drizzle's migrator looks files up by tag, not filesystem name. Forget the journal edit and `pnpm db:migrate` errors with `No file ./src/db/migrations/0002_loud_silk_fever.sql found`. Caught while building PR #12.
+
+## Read-modify-write counter increments lose writes under concurrency
+
+If a service does `SELECT value` → `newValue = existing + delta` → `INSERT ... ON CONFLICT DO UPDATE SET value = newValue` inside a single transaction at the default READ COMMITTED isolation, two concurrent calls can both read the same `value`, both compute `value + delta`, and the second `DO UPDATE` overwrites — not adds — the first write. One increment is silently lost.
+
+This nearly shipped on PR #12 in `incrementRoutineLog`. The trigger is plausible: optimistic-UI client components return immediately, so a fast double-tap on the Add button can fire two server actions before the first finishes.
+
+**Default fix:** push the addition into SQL so Postgres serializes the conflict resolution at the row level:
+
+```ts
+await tx
+  .insert(routineLogs)
+  .values({ routineId, logDate: date, status: initialStatus, value: delta })
+  .onConflictDoUpdate({
+    target: [routineLogs.routineId, routineLogs.logDate],
+    set: {
+      value: sql`${routineLogs.value} + ${delta}`,
+      status: sql`CASE WHEN ${routineLogs.value} + ${delta} >= ${threshold} THEN 'done' ELSE 'partial' END`,
+    },
+  });
+```
+
+Alternative: keep the read-then-write but add `.for('update')` to the SELECT. The SQL-side approach is simpler and faster — it removes a round-trip too.
+
+## React Testing Library + vitest 4 + happy-dom requires explicit cleanup
+
+This repo does NOT auto-cleanup the DOM between tests. Every existing component test in `tests/unit/components/` uses `afterEach(cleanup)` for a reason: without it, the previous render's nodes linger and the next test's `screen.getByLabelText` / `getByRole` queries fail with "Found multiple elements".
+
+Pattern:
+
+```ts
+import { afterEach } from 'vitest';
+import { render, cleanup } from '@testing-library/react';
+
+afterEach(() => {
+  cleanup();
+});
+```
+
+Also: vitest's unit project includes only `tests/unit/**/*.test.{ts,tsx}` (see `vitest.config.mts`). Don't put component tests in a `__tests__/` folder under `src/` — they won't be picked up. Mirror the source path under `tests/unit/components/...` instead.
