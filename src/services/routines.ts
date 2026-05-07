@@ -33,6 +33,7 @@ export async function createRoutine(
   db: DbOrTx = defaultDb,
 ): Promise<Routine> {
   const parsed = CreateRoutineSchema.parse(input);
+  const isQuantity = parsed.kind === 'quantity';
   const [row] = await db
     .insert(routines)
     .values({
@@ -41,6 +42,9 @@ export async function createRoutine(
       title: parsed.title,
       cadenceType: parsed.cadenceType,
       weekdays: parsed.cadenceType === 'weekdays' ? parsed.weekdays! : null,
+      kind: parsed.kind,
+      unit: isQuantity ? parsed.unit ?? null : null,
+      dailyTarget: isQuantity ? parsed.dailyTarget ?? null : null,
     })
     .returning();
   return row;

@@ -189,3 +189,39 @@ describe('archiveRoutine', () => {
     });
   });
 });
+
+describe('createRoutine — quantity kind', () => {
+  it('persists kind, unit, and dailyTarget', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const r = await createRoutine(
+        {
+          title: 'Exercise',
+          cadenceType: 'daily',
+          kind: 'quantity',
+          unit: 'min',
+          dailyTarget: 30,
+        },
+        u.id,
+        tx,
+      );
+      expect(r.kind).toBe('quantity');
+      expect(r.unit).toBe('min');
+      expect(r.dailyTarget).toBe(30);
+    });
+  });
+
+  it('defaults check routines to kind=check with null unit/dailyTarget', async () => {
+    await withRollback(async (tx) => {
+      const u = await seedUser(tx);
+      const r = await createRoutine(
+        { title: 'Read', cadenceType: 'daily' },
+        u.id,
+        tx,
+      );
+      expect(r.kind).toBe('check');
+      expect(r.unit).toBeNull();
+      expect(r.dailyTarget).toBeNull();
+    });
+  });
+});
