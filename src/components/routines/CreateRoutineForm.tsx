@@ -29,6 +29,7 @@ type Props = {
 export function CreateRoutineForm({ goalOptions = [], onSuccessAction }: Props) {
   const [state, formAction, pending] = useActionState(createRoutineAction, initialState);
   const [cadence, setCadence] = useState<'daily' | 'weekdays'>('daily');
+  const [kind, setKind] = useState<'check' | 'quantity'>('check');
 
   useEffect(() => {
     if (state.status === 'success') onSuccessAction?.();
@@ -55,6 +56,43 @@ export function CreateRoutineForm({ goalOptions = [], onSuccessAction }: Props) 
               <option key={g.id} value={g.id}>{g.title}</option>
             ))}
           </select>
+        </div>
+      ) : null}
+
+      <fieldset className="space-y-1">
+        <legend className="text-sm font-medium">Kind</legend>
+        <label className="mr-4 inline-flex items-center gap-1 text-sm">
+          <input
+            type="radio"
+            name="kind"
+            value="check"
+            checked={kind === 'check'}
+            onChange={() => setKind('check')}
+          />
+          Check (done / partial / skipped)
+        </label>
+        <label className="inline-flex items-center gap-1 text-sm">
+          <input
+            type="radio"
+            name="kind"
+            value="quantity"
+            checked={kind === 'quantity'}
+            onChange={() => setKind('quantity')}
+          />
+          Quantity (log a number)
+        </label>
+      </fieldset>
+
+      {kind === 'quantity' ? (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label htmlFor="unit">Unit</Label>
+            <Input id="unit" name="unit" required maxLength={20} placeholder="min" />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="dailyTarget">Daily target (optional)</Label>
+            <Input id="dailyTarget" name="dailyTarget" type="number" min={1} placeholder="30" />
+          </div>
         </div>
       ) : null}
 

@@ -18,6 +18,9 @@ export async function createRoutineAction(
   const isWeekdays = String(formData.get('cadenceType') ?? '') === 'weekdays';
   const goalIdRaw = String(formData.get('goalId') ?? '').trim();
   const weekdaysRaw = formData.getAll('weekdays').map((v) => Number(String(v)));
+  const isQuantity = String(formData.get('kind') ?? 'check') === 'quantity';
+  const unitRaw = String(formData.get('unit') ?? '').trim();
+  const targetRaw = String(formData.get('dailyTarget') ?? '').trim();
 
   const raw = {
     title: String(formData.get('title') ?? '').trim(),
@@ -26,6 +29,9 @@ export async function createRoutineAction(
     weekdays: isWeekdays
       ? weekdaysRaw.filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
       : undefined,
+    kind: isQuantity ? 'quantity' : 'check',
+    unit: isQuantity ? unitRaw : undefined,
+    dailyTarget: isQuantity && targetRaw !== '' ? Number(targetRaw) : undefined,
   };
 
   try {
