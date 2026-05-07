@@ -5,9 +5,7 @@ import * as schema from './schema';
 
 const url = env().DATABASE_URL;
 
-// Connect via Neon's pgbouncer pooler; allow a small per-instance pool so
-// Promise.all queries within a single request can run in parallel.
-// `prepare: false` is required by pgbouncer in transaction mode.
+// `prepare: false` is required by Neon's pgbouncer pooler in transaction mode.
 const queryClient = postgres(url, { max: 5, prepare: false });
 
 export const db = drizzle(queryClient, { schema });
